@@ -1,0 +1,35 @@
+Kategorie,Bauteil,Beschreibung,Menge,Einheit,Kosten CHF,Lieferant,Bestellnr,Prio
+Motor & Antrieb,Brushless Motor,Outrunner KV=900 20-30W Ø35mm,1,Stk,18,Banggood/Aliexpress,A2212-900KV,MUSS
+Motor & Antrieb,ESC 20A,Hobbywing Platinum 20A mit BEC 5V/3A,1,Stk,15,Hobbywing,30120300,MUSS
+Motor & Antrieb,Planetengetriebe 10:1,Motorabgang 3mm auf 6mm,1,Stk,22,Aliexpress,Variiert,MUSS
+Motor & Antrieb,Schneckengetriebe 4:1,Modul 1 Schneckenrad + Welle,1,Set,18,Aliexpress,Variiert,MUSS
+Mechanik,Nockenwelle,Edelstahl 1.4104 Ø12×120mm e=3mm GEDREHT,1,Stk,45,Lokale Dreherei,CNC-Custom,MUSS
+Mechanik,Kugellager 6001-2RS,Ø12×28×8mm wasserdicht,4,Stk,12,Conrad/Brütsch,6001-2RS,MUSS
+Mechanik,Kugellager 626-ZZ,Ø6×19×6mm für Gelenke,8,Stk,10,Conrad/Brütsch,626-ZZ,MUSS
+Mechanik,Edelstahl-Achse Ø6mm,1.4305 h6 Toleranz 200mm lang,2,Stk,8,Brütsch-Rüegger,D6H6,MUSS
+Mechanik,Schubstangen Alu Ø6mm,7075 Aluminium 25mm Länge,4,Stk,6,Modellbau,Selbst drehen,KANN
+Elektronik,ESP32 DevKit v1,WiFi+BT Mikrocontroller 38-Pin,1,Stk,8,Aliexpress/Reichelt,ESP32-DEVKIT,MUSS
+Elektronik,PCA9685,I2C 16-Kanal Servo-Treiber,1,Stk,6,Aliexpress,PCA9685,MUSS
+Elektronik,MS5837-30BA,Drucksensor 300m IP68 I2C,1,Stk,22,Blue Robotics,Bar30,MUSS
+Elektronik,MPU-6050,6-DOF IMU Gyro+Accel I2C,1,Stk,5,Aliexpress,GY-521,MUSS
+Elektronik,Akku LiPo 3S,11.1V 2200mAh 25C XT60,1,Stk,25,Hobbyking,Variiert,MUSS
+Elektronik,Ladegerät LiPo,Balance-Lader iMaxB6 oder ähnlich,1,Stk,25,Conrad,iMaxB6,MUSS
+Servo,MG90S wasserdicht,Brustflosse Links (3 kg·cm),1,Stk,7,Aliexpress,DS3010,MUSS
+Servo,MG90S wasserdicht,Brustflosse Rechts (3 kg·cm),1,Stk,7,Aliexpress,DS3010,MUSS
+Servo,MG996R wasserdicht,Ballast-Kolben (15 kg·cm),1,Stk,10,Aliexpress,MG996R,MUSS
+3D-Druck,PETG Filament 1kg,Hauptkörper + Halter (schwarz/grau),1,Rolle,30,Prusa/Amazon,PETG-1KG,MUSS
+3D-Druck,TPU 95A Filament 0.25kg,Passive Gelenke + Dichtungsteile,1,Rolle,12,Aliexpress,TPU95A,MUSS
+3D-Druck,PLA 0.5kg,Nur für Silikonformen,1,Rolle,12,Variiert,PLA-Gray,KANN
+Silikon,Dragon Skin 10 Fast 500g,Schwanzflosse + Körperhaut,1,Kit,38,Smooth-On/Amazon,DS10F-0.5,MUSS
+Silikon,Dragon Skin 10 Slow 500g,Brustflossen (flexibler),1,Kit,38,Smooth-On/Amazon,DS10S-0.5,KANN
+Silikon,Mann Ease Release 200,Trennmittel für Formen,1,Dose,15,Smooth-On,MER200,MUSS
+Silikon,Pigmente Set (blau/grau/schwarz),Haifischfarben,1,Set,12,Smooth-On,Pigmente,KANN
+Dichtung,O-Ring NBR 80×3mm,Hauptgehäuse Abdichtung,5,Stk,8,Brütsch-Rüegger,NBR-80-3,MUSS
+Dichtung,Marine Epoxy West System,Kabeldurchführungen vergießen,1,Kit,22,Baumarkt,105/206,MUSS
+Dichtung,JST-SM Stecker wasserdicht,Alle externen Kabelverbindungen,10,Set,12,Aliexpress,JST-SM,MUSS
+Dichtung,Wellendichtring Simmerring 6×12×4,Servo-Achsen-Durchführungen,4,Stk,8,Brütsch-Rüegger,TC-6-12-4,MUSS
+CFK,Carbon-Stab Ø3mm 300mm,Flossen-Verstärkung (Kern),2,Stk,8,Hobbyking,CF-3-300,MUSS
+Kleinteile,Edelstahl-Schrauben Set M2/M3,Diverse Längen (10-30mm),1,Set,12,Brütsch-Rüegger,SS-SET,MUSS
+Kleinteile,Silikagel Beutel 2g,Feuchtigkeitsschutz innen,5,Stk,3,Amazon,SG-2G,MUSS
+Kleinteile,Kabelbinder sortiert,Kabelmanagement,1,Set,4,Baumarkt,Variiert,MUSS
+TOTAL,,,,,498,,, 

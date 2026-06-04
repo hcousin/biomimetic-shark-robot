@@ -1,0 +1,170 @@
+solid DorsalFin
+  facet normal 0.000000e+00 0.000000e+00 0.000000e+00
+    outer loop
+      vertex 0.0000 0.0000 0.0000
+      vertex 6.6667 0.0000 0.0000
+      vertex 0.0000 0.0000 0.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 6.6667 0.0000 0.0000
+      vertex 6.6667 0.0000 10.3528
+      vertex 0.0000 0.0000 0.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 6.6667 0.0000 0.0000
+      vertex 13.3333 0.0000 0.0000
+      vertex 6.6667 0.0000 10.3528
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 13.3333 0.0000 0.0000
+      vertex 13.3333 0.0000 20.0000
+      vertex 6.6667 0.0000 10.3528
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 13.3333 0.0000 0.0000
+      vertex 20.0000 0.0000 0.0000
+      vertex 13.3333 0.0000 20.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 20.0000 0.0000 0.0000
+      vertex 20.0000 0.0000 28.2843
+      vertex 13.3333 0.0000 20.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 20.0000 0.0000 0.0000
+      vertex 26.6667 0.0000 0.0000
+      vertex 20.0000 0.0000 28.2843
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 26.6667 0.0000 0.0000
+      vertex 26.6667 0.0000 34.6410
+      vertex 20.0000 0.0000 28.2843
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 26.6667 0.0000 0.0000
+      vertex 33.3333 0.0000 0.0000
+      vertex 26.6667 0.0000 34.6410
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 33.3333 0.0000 0.0000
+      vertex 33.3333 0.0000 38.6370
+      vertex 26.6667 0.0000 34.6410
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 33.3333 0.0000 0.0000
+      vertex 40.0000 0.0000 0.0000
+      vertex 33.3333 0.0000 38.6370
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 40.0000 0.0000 0.0000
+      vertex 40.0000 0.0000 40.0000
+      vertex 33.3333 0.0000 38.6370
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 40.0000 0.0000 0.0000
+      vertex 46.6667 0.0000 0.0000
+      vertex 40.0000 0.0000 40.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 46.6667 0.0000 0.0000
+      vertex 46.6667 0.0000 38.6370
+      vertex 40.0000 0.0000 40.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 46.6667 0.0000 0.0000
+      vertex 53.3333 0.0000 0.0000
+      vertex 46.6667 0.0000 38.6370
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 53.3333 0.0000 0.0000
+      vertex 53.3333 0.0000 34.6410
+      vertex 46.6667 0.0000 38.6370
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 53.3333 0.0000 0.0000
+      vertex 60.0000 0.0000 0.0000
+      vertex 53.3333 0.0000 34.6410
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 60.0000 0.0000 0.0000
+      vertex 60.0000 0.0000 28.2843
+      vertex 53.3333 0.0000 34.6410
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 60.0000 0.0000 0.0000
+      vertex 66.6667 0.0000 0.0000
+      vertex 60.0000 0.0000 28.2843
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 66.6667 0.0000 0.0000
+      vertex 66.6667 0.0000 20.0000
+      vertex 60.0000 0.0000 28.2843
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 66.6667 0.0000 0.0000
+      vertex 73.3333 0.0000 0.0000
+      vertex 66.6667 0.0000 20.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 73.3333 0.0000 0.0000
+      vertex 73.3333 0.0000 10.3528
+      vertex 66.6667 0.0000 20.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex 73.3333 0.0000 0.0000
+      vertex 80.0000 0.0000 0.0000
+      vertex 73.3333 0.0000 10.3528
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -3.264659e-04 0.000000e+00
+    outer loop
+      vertex 80.0000 0.0000 0.0000
+      vertex 80.0000 0.0000 0.0000
+      vertex 73.3333 0.0000 10.3528
+    endloop
+  endfacet
+endsolid DorsalFin

@@ -1,0 +1,86 @@
+solid TailLinkJ2
+  facet normal 0.000000e+00 0.000000e+00 1.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex 12.5000 -22.0000 0.0000
+      vertex 12.5000 22.0000 0.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 0.000000e+00 1.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex 12.5000 22.0000 0.0000
+      vertex -12.5000 22.0000 0.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 0.000000e+00 -1.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 24.0000
+      vertex 12.5000 22.0000 24.0000
+      vertex 12.5000 -22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 0.000000e+00 -1.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 24.0000
+      vertex -12.5000 22.0000 24.0000
+      vertex 12.5000 22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 1.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex -12.5000 -22.0000 24.0000
+      vertex 12.5000 -22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 1.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex 12.5000 -22.0000 24.0000
+      vertex 12.5000 -22.0000 0.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 22.0000 0.0000
+      vertex 12.5000 22.0000 24.0000
+      vertex -12.5000 22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 0.000000e+00 -1.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 22.0000 0.0000
+      vertex 12.5000 22.0000 0.0000
+      vertex 12.5000 22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 1.000000e+00 0.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex -12.5000 22.0000 24.0000
+      vertex -12.5000 -22.0000 24.0000
+    endloop
+  endfacet
+  facet normal 1.000000e+00 0.000000e+00 0.000000e+00
+    outer loop
+      vertex -12.5000 -22.0000 0.0000
+      vertex -12.5000 22.0000 0.0000
+      vertex -12.5000 22.0000 24.0000
+    endloop
+  endfacet
+  facet normal -1.000000e+00 0.000000e+00 0.000000e+00
+    outer loop
+      vertex 12.5000 -22.0000 0.0000
+      vertex 12.5000 -22.0000 24.0000
+      vertex 12.5000 22.0000 24.0000
+    endloop
+  endfacet
+  facet normal -1.000000e+00 0.000000e+00 0.000000e+00
+    outer loop
+      vertex 12.5000 -22.0000 0.0000
+      vertex 12.5000 22.0000 24.0000
+      vertex 12.5000 22.0000 0.0000
+    endloop
+  endfacet
+endsolid TailLinkJ2

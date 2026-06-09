@@ -1,0 +1,329 @@
+#!/usr/bin/env python3
+"""
+Biomimetic Shark Robot — Realistische Haifisch-Illustration (SVG)
+Zeigt den Roboter als naturgetreuen Haifisch mit internem Komponentenblick
+"""
+
+SVG = '''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+
+<defs>
+  <!-- Körper-Gradient: dunkel dorsal → hell ventral -->
+  <linearGradient id="bGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#1E3A52"/>
+    <stop offset="25%"  stop-color="#2C5070"/>
+    <stop offset="50%"  stop-color="#4A7A9E"/>
+    <stop offset="72%"  stop-color="#8BBAC8"/>
+    <stop offset="100%" stop-color="#E8E2D4"/>
+  </linearGradient>
+
+  <!-- Flossen-Gradient -->
+  <linearGradient id="fGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#243E58"/>
+    <stop offset="100%" stop-color="#5A8AAA"/>
+  </linearGradient>
+
+  <!-- Schwanzflosse-Gradient -->
+  <linearGradient id="cGrad" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#243E58"/>
+    <stop offset="100%" stop-color="#3A6882"/>
+  </linearGradient>
+
+  <!-- Interne Komponenten Clip-Pfad -->
+  <clipPath id="bodyClip">
+    <path d="M44,210 C100,166 180,142 290,132 L770,162 C820,166 860,172 892,196 C920,180 950,164 978,152 C1006,140 1026,140 1032,152 C1040,144 1060,130 1084,114 C1100,102 1120,94 1142,86 L1142,210 C1120,224 1100,222 1084,218 C1060,238 1040,248 1032,238 C1026,252 1006,258 978,246 C950,262 920,266 892,258 C860,280 820,288 770,290 L290,260 C180,256 100,238 44,210 Z"/>
+  </clipPath>
+
+  <!-- Ventrales Highlight -->
+  <radialGradient id="vHigh" cx="50%" cy="70%" r="40%">
+    <stop offset="0%"   stop-color="#F8F4EA" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="#F8F4EA" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Dorsaler Schimmer -->
+  <radialGradient id="dSheen" cx="50%" cy="30%" r="45%">
+    <stop offset="0%"   stop-color="#6AAABB" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#6AAABB" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<!-- Hintergrund -->
+<rect width="1200" height="420" fill="#F8F6F2"/>
+<rect x="8" y="8" width="1184" height="404" fill="none" stroke="#D8D4C8" stroke-width="1"/>
+
+<!-- ═══════════════════════════════════════════════
+     INTERNE KOMPONENTEN (semi-transparent, X-Ray)
+═══════════════════════════════════════════════ -->
+<g clip-path="url(#bodyClip)" opacity="0.22">
+  <!-- Motor + Nockenwelle -->
+  <rect x="80"  y="155" width="180" height="90" rx="8" fill="#FF8833" stroke="#CC5500" stroke-width="2"/>
+  <text x="170" y="205" text-anchor="middle" font-size="14" fill="#CC3300" font-family="monospace" font-weight="bold">BL Motor + Nocke</text>
+
+  <!-- ESP32 + ESC + Sensoren -->
+  <rect x="275" y="148" width="260" height="102" rx="8" fill="#3355AA" stroke="#1133AA" stroke-width="2"/>
+  <text x="405" y="198" text-anchor="middle" font-size="14" fill="#0022AA" font-family="monospace" font-weight="bold">ESP32 + ESC + Sensoren</text>
+
+  <!-- LiPo Akku -->
+  <rect x="548" y="152" width="140" height="96" rx="8" fill="#22AA44" stroke="#116622" stroke-width="2"/>
+  <text x="618" y="204" text-anchor="middle" font-size="14" fill="#005522" font-family="monospace" font-weight="bold">LiPo 3S</text>
+
+  <!-- Ballast -->
+  <rect x="700" y="158" width="120" height="84" rx="8" fill="#8833AA" stroke="#661199" stroke-width="2"/>
+  <text x="760" y="204" text-anchor="middle" font-size="13" fill="#440066" font-family="monospace" font-weight="bold">Ballast</text>
+
+  <!-- Gelenke J1-J4 -->
+  <line x1="870" y1="148" x2="870" y2="252" stroke="#CC3333" stroke-width="4"/>
+  <line x1="910" y1="152" x2="910" y2="248" stroke="#CC3333" stroke-width="4"/>
+  <line x1="948" y1="158" x2="948" y2="242" stroke="#CC3333" stroke-width="4"/>
+  <line x1="980" y1="164" x2="980" y2="236" stroke="#CC3333" stroke-width="4"/>
+</g>
+
+<!-- ═══════════════════════════════════════════════
+     HAUPTKÖRPER
+═══════════════════════════════════════════════ -->
+<path id="body" d="
+  M 44,210
+  C 90,164 178,138 270,130
+  C 340,124 430,126 530,132
+  L 760,158
+  C 810,164 856,172 892,192
+  C 928,172 956,158 982,148
+  C 1004,140 1020,140 1026,148
+  C 1036,140 1054,124 1074,108
+  C 1090,96 1112,86 1130,80
+  C 1148,74 1158,82 1152,94
+  C 1144,106 1126,118 1108,132
+  C 1090,146 1068,158 1048,164
+  C 1038,167 1030,168 1024,168
+  L 1022,210
+  L 1024,252
+  C 1030,252 1038,253 1048,256
+  C 1068,262 1090,274 1108,288
+  C 1126,302 1144,314 1152,326
+  C 1158,338 1148,346 1130,340
+  C 1112,334 1090,324 1074,312
+  C 1054,296 1036,280 1026,272
+  C 1020,280 1004,286 982,272
+  C 956,262 928,248 892,228
+  C 856,248 810,256 760,262
+  L 530,288
+  C 430,294 340,296 270,290
+  C 178,282 90,256 44,210
+  Z"
+  fill="url(#bGrad)"
+  stroke="#1A3348"
+  stroke-width="1.8"
+/>
+
+<!-- Ventrales Highlight (weisser Bauch) -->
+<path d="
+  M 44,210
+  C 90,230 178,252 270,258
+  C 340,262 430,264 530,260
+  L 760,240
+  C 810,234 856,226 892,214
+  C 928,226 956,238 982,248
+  C 1004,256 1020,258 1024,252
+  C 1030,252 1038,253 1048,256
+  C 1068,262 1090,274 1108,288
+  C 1126,302 1144,314 1152,326
+  C 1158,338 1148,346 1130,340
+  C 1112,334 1090,324 1074,312
+  C 1054,296 1036,280 1026,272
+  C 1020,280 1004,286 982,272
+  C 956,262 928,248 892,228
+  C 856,248 810,256 760,262
+  L 530,288
+  C 430,294 340,296 270,290
+  C 178,282 90,256 44,210
+  Z"
+  fill="url(#vHigh)"
+/>
+
+<!-- Dorsaler Glanz -->
+<ellipse cx="500" cy="158" rx="380" ry="55" fill="url(#dSheen)"/>
+
+<!-- ═══════════════════════════════════════════════
+     FLOSSEN
+═══════════════════════════════════════════════ -->
+
+<!-- ERSTE RÜCKENFLOSSE (gross, prominent) -->
+<path d="
+  M 400,130
+  C 408,104 420,72 440,50
+  C 454,34 470,30 482,38
+  C 494,46 500,64 504,88
+  C 507,108 508,122 510,130
+  Z"
+  fill="url(#fGrad)"
+  stroke="#1A3348"
+  stroke-width="1.5"
+/>
+<!-- Flosse-Linie Detail -->
+<path d="M 440,50 C 470,68 495,100 508,128" fill="none" stroke="#1A3348" stroke-width="0.5" opacity="0.4"/>
+
+<!-- ZWEITE RÜCKENFLOSSE (klein) -->
+<path d="
+  M 796,162
+  C 800,148 808,132 816,126
+  C 824,120 832,124 834,136
+  L 838,162
+  Z"
+  fill="url(#fGrad)"
+  stroke="#1A3348"
+  stroke-width="1.2"
+/>
+
+<!-- BRUSTFLOSSE LINKS (gross, geschwungen) -->
+<path d="
+  M 270,210
+  C 258,232 240,256 218,278
+  C 196,298 174,308 160,302
+  C 146,296 150,278 166,258
+  C 184,236 220,218 258,214
+  Z"
+  fill="url(#fGrad)"
+  stroke="#1A3348"
+  stroke-width="1.5"
+/>
+
+<!-- BAUCHFLOSSE LINKS -->
+<path d="
+  M 668,262
+  C 660,276 646,292 634,300
+  C 622,307 614,302 618,290
+  C 622,278 638,270 660,264
+  Z"
+  fill="url(#fGrad)"
+  stroke="#1A3348"
+  stroke-width="1.2"
+/>
+
+<!-- AFTERFLOSSE -->
+<path d="
+  M 824,258
+  C 818,270 808,282 800,287
+  C 792,291 788,284 792,274
+  L 818,259
+  Z"
+  fill="url(#fGrad)"
+  stroke="#1A3348"
+  stroke-width="1"
+/>
+
+<!-- ═══════════════════════════════════════════════
+     DETAILS
+═══════════════════════════════════════════════ -->
+
+<!-- Seitenline (Lateral Line) -->
+<path d="M 120,196 C 300,188 520,180 760,178 C 820,178 880,186 920,196"
+  fill="none" stroke="#2A4A62" stroke-width="1" stroke-dasharray="5,4" opacity="0.5"/>
+
+<!-- KIEMENSPALTEN (5 geschwungene Linien) -->
+<g stroke="#1A3348" stroke-width="1.2" fill="none" opacity="0.8">
+  <path d="M 174,150 C 178,170 178,190 174,210"/>
+  <path d="M 194,146 C 198,168 198,192 194,214"/>
+  <path d="M 214,143 C 218,166 218,194 214,217"/>
+  <path d="M 234,141 C 238,165 238,196 234,219"/>
+  <path d="M 254,140 C 258,164 258,197 254,220"/>
+</g>
+
+<!-- AUGE -->
+<ellipse cx="96" cy="192" rx="18" ry="16" fill="#0A0A0A"/>
+<ellipse cx="94" cy="190" rx="15" ry="13" fill="#0D1820"/>
+<ellipse cx="92" cy="188" rx="7"  ry="6"  fill="#162030" opacity="0.8"/>
+<circle  cx="104" cy="198" r="4"  fill="white" opacity="0.75"/>
+<circle  cx="90"  cy="186" r="2.5" fill="white" opacity="0.45"/>
+
+<!-- Pupille -->
+<ellipse cx="96" cy="192" rx="5" ry="6" fill="#060C14" opacity="0.9"/>
+
+<!-- SCHNAUZE / MAUL -->
+<path d="M 44,210 C 52,222 72,230 90,228" fill="none" stroke="#1A3348" stroke-width="1.2" opacity="0.6"/>
+
+<!-- Nasenloch -->
+<ellipse cx="62" cy="196" rx="4" ry="2.5" transform="rotate(-15,62,196)" fill="#1A2E40" opacity="0.8"/>
+
+<!-- ═══════════════════════════════════════════════
+     KÖRPER-TEXTUR (subtile Schuppenlinie)
+═══════════════════════════════════════════════ -->
+<!-- Subtile Muskellinie -->
+<path d="M 200,140 C 400,134 600,142 800,162 C 850,168 880,172 910,180"
+  fill="none" stroke="#2C4E6A" stroke-width="0.6" opacity="0.3"/>
+<path d="M 200,280 C 400,284 600,278 800,258 C 850,252 880,248 910,240"
+  fill="none" stroke="#4A7890" stroke-width="0.6" opacity="0.2"/>
+
+<!-- Dorsale Medianlinie -->
+<path d="M 120,148 L 780,162" fill="none" stroke="#1A3348" stroke-width="0.5" opacity="0.2" stroke-dasharray="8,6"/>
+
+<!-- ═══════════════════════════════════════════════
+     BESCHRIFTUNGEN (Leader Lines)
+═══════════════════════════════════════════════ -->
+
+<!-- Rückenflosse -->
+<line x1="456" y1="46" x2="456" y2="14" stroke="#555" stroke-width="0.6"/>
+<circle cx="456" cy="46" r="2" fill="#888"/>
+<text x="456" y="12" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">Rückenflosse</text>
+
+<!-- Brustflosse -->
+<line x1="196" y1="278" x2="148" y2="310" stroke="#555" stroke-width="0.6"/>
+<circle cx="196" cy="278" r="2" fill="#888"/>
+<text x="148" y="322" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">Brustflosse</text>
+
+<!-- Kiemenspalten -->
+<line x1="214" y1="145" x2="214" y2="112" stroke="#555" stroke-width="0.6"/>
+<circle cx="214" cy="145" r="2" fill="#888"/>
+<text x="214" y="110" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">Kiemenspalten</text>
+
+<!-- Schwanzflosse -->
+<line x1="1120" y1="100" x2="1165" y2="80" stroke="#555" stroke-width="0.6"/>
+<circle cx="1120" cy="100" r="2" fill="#888"/>
+<text x="1185" y="82" text-anchor="start" font-size="10" fill="#444" font-family="monospace">Schwanzflosse</text>
+<text x="1185" y="94" text-anchor="start" font-size="9" fill="#666" font-family="monospace">(lunate, BCF)</text>
+
+<!-- Interne Komponenten Labels -->
+<text x="170" y="100" text-anchor="middle" font-size="9" fill="#CC5500" font-family="monospace" opacity="0.7">Motor + Nocke</text>
+<line x1="170" y1="104" x2="170" y2="130" stroke="#CC5500" stroke-width="0.5" opacity="0.5"/>
+
+<text x="405" y="96" text-anchor="middle" font-size="9" fill="#2244AA" font-family="monospace" opacity="0.7">ESP32 + Sensoren</text>
+<line x1="405" y1="100" x2="405" y2="126" stroke="#2244AA" stroke-width="0.5" opacity="0.5"/>
+
+<text x="618" y="100" text-anchor="middle" font-size="9" fill="#226622" font-family="monospace" opacity="0.7">LiPo 3S</text>
+<line x1="618" y1="104" x2="618" y2="130" stroke="#226622" stroke-width="0.5" opacity="0.5"/>
+
+<text x="760" y="104" text-anchor="middle" font-size="9" fill="#662288" font-family="monospace" opacity="0.7">Ballast</text>
+<line x1="760" y1="108" x2="760" y2="136" stroke="#662288" stroke-width="0.5" opacity="0.5"/>
+
+<!-- Gelenke Labels -->
+<text x="870" y="350" text-anchor="middle" font-size="9" fill="#CC3333" font-family="monospace" opacity="0.8">J1</text>
+<text x="910" y="350" text-anchor="middle" font-size="9" fill="#CC3333" font-family="monospace" opacity="0.8">J2</text>
+<text x="948" y="350" text-anchor="middle" font-size="9" fill="#CC3333" font-family="monospace" opacity="0.8">J3</text>
+<text x="980" y="350" text-anchor="middle" font-size="9" fill="#CC3333" font-family="monospace" opacity="0.8">J4</text>
+<line x1="870" y1="252" x2="870" y2="344" stroke="#CC3333" stroke-width="0.5" opacity="0.5"/>
+<line x1="910" y1="252" x2="910" y2="344" stroke="#CC3333" stroke-width="0.5" opacity="0.5"/>
+<line x1="948" y1="244" x2="948" y2="344" stroke="#CC3333" stroke-width="0.5" opacity="0.5"/>
+<line x1="980" y1="238" x2="980" y2="344" stroke="#CC3333" stroke-width="0.5" opacity="0.5"/>
+
+<!-- ═══════════════════════════════════════════════
+     TITELBLOCK
+═══════════════════════════════════════════════ -->
+<rect x="8" y="376" width="1184" height="36" fill="#EEEBE5" stroke="#D8D4C8" stroke-width="0.5"/>
+<line x1="400" y1="376" x2="400" y2="412" stroke="#D8D4C8" stroke-width="0.5"/>
+<line x1="750" y1="376" x2="750" y2="412" stroke="#D8D4C8" stroke-width="0.5"/>
+<line x1="1000" y1="376" x2="1000" y2="412" stroke="#D8D4C8" stroke-width="0.5"/>
+
+<text x="204" y="390" text-anchor="middle" font-size="12" font-weight="bold" fill="#222" font-family="monospace">Biomimetic Shark Robot</text>
+<text x="204" y="406" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">Carangiform BCF · Haifisch-Illustration · Rev. 1.0</text>
+<text x="575" y="390" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">Vorbild: Blauer Hai / Mako (carangiform)</text>
+<text x="575" y="406" text-anchor="middle" font-size="9" fill="#666" font-family="monospace">600mm · Ø80mm · 4 Gelenke · ~498 CHF</text>
+<text x="875" y="390" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">Antrieb: BL KV=900 → Nocke 40:1</text>
+<text x="875" y="406" text-anchor="middle" font-size="9" fill="#666" font-family="monospace">f = 0.5–2.0 Hz · St = 0.25–0.35</text>
+<text x="1100" y="390" text-anchor="middle" font-size="10" fill="#444" font-family="monospace">github.com/hcousin</text>
+<text x="1100" y="406" text-anchor="middle" font-size="9" fill="#666" font-family="monospace">biomimetic-shark-robot</text>
+
+</svg>'''
+
+out = '/home/claude/shark/docs/shark_illustration.svg'
+with open(out, 'w', encoding='utf-8') as f:
+    f.write(SVG)
+print(f"✓ {out} ({len(SVG)//1024} KB)")

@@ -1,14 +1,7 @@
-# ============================================================
-#  GitHub Actions: Migration zu Codeberg
-#  Konfiguration: Codeberg = Hauptrepo, GitHub = Spiegel
-#
-#  Einmalig ausführen: Actions Tab → "Migrate to Codeberg" → Run workflow
-# ============================================================
-
 name: Migrate to Codeberg
 
 on:
-  workflow_dispatch:   # Nur manuell auslösbar
+  workflow_dispatch:
 
 jobs:
   migrate:
@@ -18,162 +11,153 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # Volle History
 
-      - name: Migrate all repos to Codeberg
-        env:
-          GH_TOKEN:  ${{ secrets.GH_TOKEN }}
-          CB_TOKEN:  ${{ secrets.CB_TOKEN }}
-          GH_USER:   hcousin
-          CB_USER:   hcousin
+      - name: Write migration script
         run: |
-          set -e
+          cat > /tmp/migrate.py << 'PYEOF'
+import json, os, subprocess, sys, urllib.request, urllib.error, base64
 
-          GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
-          ok()   { echo -e "${GREEN}✓${NC} $1"; }
-          info() { echo -e "${BLUE}→${NC} $1"; }
-          err()  { echo -e "${RED}✗${NC} $1"; }
+GH_TOKEN = os.environ["GH_TOKEN"]
+CB_TOKEN = os.environ["CB_TOKEN"]
+GH_USER  = os.environ.get("GH_USER", "hcousin")
+CB_USER  = os.environ.get("CB_USER", "hcousin")
 
-          echo "════════════════════════════════════════════"
-          echo "  GitHub → Codeberg Migration"
-          echo "  Codeberg = Hauptrepo | GitHub = Spiegel"
-          echo "════════════════════════════════════════════"
-          echo ""
+def gh(path, method="GET", data=None):
+    url = f"https://api.github.com{path}"
+    req = urllib.request.Request(url, data=json.dumps(data).encode() if data else None,
+          method=method, headers={"Authorization": f"token {GH_TOKEN}",
+          "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read()) if r.read() else {}
+    except Exception as e:
+        return {"error": str(e)}
 
-          # ── Alle GitHub-Repos abrufen ────────────────
-          info "GitHub Repositories werden abgerufen..."
-          REPOS=$(curl -s \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/user/repos?per_page=100&type=all")
+def cb(path, method="GET", data=None):
+    url = f"https://codeberg.org/api/v1{path}"
+    req = urllib.request.Request(url, data=json.dumps(data).encode() if data else None,
+          method=method, headers={"Authorization": f"token {CB_TOKEN}",
+          "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as r:
+            body = r.read()
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"  HTTP {e.code}: {body[:200]}")
+        return {"error": e.code}
 
-          echo "$REPOS" | python3 -c "
-          import json, sys
-          repos = json.load(sys.stdin)
-          for r in repos:
-              priv = 'true' if r['private'] else 'false'
-              desc = (r.get('description') or '').replace('|','').replace('\n',' ')[:200]
-              print(f\"{r['name']}|{priv}|{desc}\")
-          " > /tmp/repos.txt
+def run(cmd, **kw):
+    print(f"  $ {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True, **kw)
+    if result.stdout: print(result.stdout[-500:])
+    if result.stderr: print(result.stderr[-500:])
+    return result.returncode == 0
 
-          echo "Gefundene Repos:"
-          cat /tmp/repos.txt | while IFS='|' read -r name priv desc; do
-              icon="public"; [ "$priv" = "true" ] && icon="private"
-              echo "  [$icon] $name"
-          done
-          echo ""
+# Verify tokens
+print("\n=== Token-Prüfung ===")
+me_gh = gh("/user")
+print(f"GitHub: {me_gh.get('login', 'FEHLER: ' + str(me_gh.get('error','?')))}")
+me_cb = cb("/user")
+print(f"Codeberg: {me_cb.get('login', 'FEHLER: ' + str(me_cb.get('error','?')))}")
 
-          # ── Funktion: Einzelnes Repo migrieren ───────
-          migrate_repo() {
-              local REPO_NAME="$1"
-              local IS_PRIVATE="$2"
-              local DESCRIPTION="$3"
+if me_cb.get("error"):
+    print("ABBRUCH: Codeberg Token ungültig!")
+    sys.exit(1)
 
-              echo "────────────────────────────────────────"
-              info "Migriere: $REPO_NAME"
+# Fetch repos
+print("\n=== GitHub Repositories ===")
+repos = gh("/user/repos?per_page=100&type=all")
+if not isinstance(repos, list):
+    print("FEHLER beim Abrufen der Repos:", repos)
+    sys.exit(1)
 
-              # 1. Codeberg Repo erstellen
-              info "[1/5] Erstelle Repo auf Codeberg..."
-              CB_RESP=$(curl -s -X POST \
-                -H "Authorization: token $CB_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{
-                  \"name\": \"$REPO_NAME\",
-                  \"description\": \"$DESCRIPTION\",
-                  \"private\": $IS_PRIVATE,
-                  \"auto_init\": false,
-                  \"default_branch\": \"main\"
-                }" \
-                "https://codeberg.org/api/v1/user/repos")
+for r in repos:
+    print(f"  {'🔒' if r['private'] else '🔓'} {r['name']}")
 
-              CB_URL=$(echo "$CB_RESP" | python3 -c "
-          import json,sys
-          r=json.load(sys.stdin)
-          print(r.get('clone_url','EXISTS'))
-          " 2>/dev/null || echo "EXISTS")
+# Migrate each repo
+for repo in repos:
+    name = repo["name"]
+    is_private = repo["private"]
+    desc = (repo.get("description") or "").replace('"', "'")
 
-              if [ "$CB_URL" = "EXISTS" ] || [ -z "$CB_URL" ]; then
-                  CB_URL="https://codeberg.org/$CB_USER/$REPO_NAME.git"
-                  info "  Repo existiert bereits auf Codeberg"
-              else
-                  ok "  Repo erstellt auf Codeberg"
-              fi
+    print(f"\n{'='*50}")
+    print(f"Migriere: {name}")
+    print(f"{'='*50}")
 
-              # 2. GitHub Mirror-Clone
-              info "[2/5] Mirror-Clone von GitHub..."
-              git clone --mirror \
-                "https://$GH_USER:$GH_TOKEN@github.com/$GH_USER/$REPO_NAME.git" \
-                "/tmp/$REPO_NAME.git"
-              ok "  Geklont (volle History)"
+    # 1. Create on Codeberg
+    print("\n[1/5] Erstelle Repo auf Codeberg...")
+    r = cb("/user/repos", "POST", {
+        "name": name, "description": desc,
+        "private": is_private, "auto_init": False,
+        "default_branch": "main"
+    })
+    if r.get("error") == 409 or "already exists" in str(r).lower():
+        print("  Repo existiert bereits — OK")
+    elif r.get("clone_url"):
+        print(f"  ✓ Erstellt: {r['clone_url']}")
+    else:
+        print(f"  Info: {r}")
 
-              # 3. Push zu Codeberg
-              info "[3/5] Push zu Codeberg..."
-              cd "/tmp/$REPO_NAME.git"
-              git remote set-url origin \
-                "https://$CB_USER:$CB_TOKEN@codeberg.org/$CB_USER/$REPO_NAME.git"
-              git push --mirror origin
-              ok "  Push abgeschlossen"
-              cd /tmp && rm -rf "/tmp/$REPO_NAME.git"
+    # 2. Mirror clone from GitHub
+    print("\n[2/5] Mirror-Clone von GitHub...")
+    clone_dir = f"/tmp/{name}.git"
+    ok = run(["git", "clone", "--mirror",
+              f"https://{GH_USER}:{GH_TOKEN}@github.com/{GH_USER}/{name}.git",
+              clone_dir])
+    if not ok:
+        print("  FEHLER beim Klonen!"); continue
+    print("  ✓ Geklont")
 
-              # 4. GitHub als Push-Spiegel auf Codeberg konfigurieren
-              info "[4/5] GitHub als Push-Spiegel konfigurieren..."
-              MIRROR_RESP=$(curl -s -X POST \
-                -H "Authorization: token $CB_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{
-                  \"remote_address\": \"https://github.com/$GH_USER/$REPO_NAME.git\",
-                  \"remote_username\": \"$GH_USER\",
-                  \"remote_password\": \"$GH_TOKEN\",
-                  \"sync_on_commit\": true,
-                  \"interval\": \"8h0m0s\"
-                }" \
-                "https://codeberg.org/api/v1/repos/$CB_USER/$REPO_NAME/push_mirrors")
+    # 3. Push to Codeberg
+    print("\n[3/5] Push zu Codeberg...")
+    ok = run(["git", "remote", "set-url", "origin",
+              f"https://{CB_USER}:{CB_TOKEN}@codeberg.org/{CB_USER}/{name}.git"],
+             cwd=clone_dir)
+    ok = run(["git", "push", "--mirror", "origin"], cwd=clone_dir)
+    if not ok:
+        print("  FEHLER beim Push!")
+    else:
+        print("  ✓ Push abgeschlossen")
 
-              MIRROR_ID=$(echo "$MIRROR_RESP" | python3 -c "
-          import json,sys
-          r=json.load(sys.stdin)
-          print(r.get('id','ERR'))
-          " 2>/dev/null || echo "ERR")
+    subprocess.run(["rm", "-rf", clone_dir])
 
-              if [ "$MIRROR_ID" != "ERR" ] && [ -n "$MIRROR_ID" ]; then
-                  ok "  Push-Spiegel aktiv (sync bei Commit + alle 8h)"
-              else
-                  err "  Push-Spiegel evtl. bereits vorhanden — OK"
-              fi
+    # 4. Configure GitHub as push mirror on Codeberg
+    print("\n[4/5] GitHub als Push-Spiegel konfigurieren...")
+    r = cb(f"/repos/{CB_USER}/{name}/push_mirrors", "POST", {
+        "remote_address": f"https://github.com/{GH_USER}/{name}.git",
+        "remote_username": GH_USER,
+        "remote_password": GH_TOKEN,
+        "sync_on_commit": True,
+        "interval": "8h0m0s"
+    })
+    if r.get("id"):
+        print(f"  ✓ Push-Spiegel aktiv (ID: {r['id']}, alle 8h + bei Commit)")
+    else:
+        print(f"  Info: {r}")
 
-              # 5. GitHub Beschreibung aktualisieren
-              info "[5/5] GitHub Repo als Spiegel kennzeichnen..."
-              curl -s -X PATCH \
-                -H "Authorization: token $GH_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{\"description\": \"[Mirror] Hauptrepo: https://codeberg.org/$CB_USER/$REPO_NAME\"}" \
-                "https://api.github.com/repos/$GH_USER/$REPO_NAME" > /dev/null
-              ok "  GitHub Beschreibung aktualisiert"
+    # 5. Update GitHub description
+    print("\n[5/5] GitHub Beschreibung aktualisieren...")
+    r = gh(f"/repos/{GH_USER}/{name}", "PATCH", {
+        "description": f"[Mirror] Hauptrepo: https://codeberg.org/{CB_USER}/{name}"
+    })
+    if r.get("name"):
+        print(f"  ✓ Beschreibung aktualisiert")
 
-              echo ""
-              echo "  ✅ $REPO_NAME fertig!"
-              echo "     Codeberg: https://codeberg.org/$CB_USER/$REPO_NAME"
-              echo "     GitHub:   https://github.com/$GH_USER/$REPO_NAME (Spiegel)"
-              echo ""
-          }
+    print(f"\n  ✅ {name} fertig!")
+    print(f"     Codeberg: https://codeberg.org/{CB_USER}/{name}")
+    print(f"     GitHub:   https://github.com/{GH_USER}/{name} (Spiegel)")
 
-          # ── Alle Repos migrieren ─────────────────────
-          while IFS='|' read -r name priv desc; do
-              migrate_repo "$name" "$priv" "$desc"
-          done < /tmp/repos.txt
+print("\n" + "="*50)
+print("Migration abgeschlossen!")
+print("="*50)
+PYEOF
+          echo "✓ Script geschrieben"
 
-          # ── Zusammenfassung ──────────────────────────
-          echo "════════════════════════════════════════════"
-          echo "  Migration abgeschlossen!"
-          echo "════════════════════════════════════════════"
-          echo ""
-          echo "Codeberg Hauptrepos:"
-          while IFS='|' read -r name priv desc; do
-              echo "  ✓ https://codeberg.org/$CB_USER/$name"
-          done < /tmp/repos.txt
-          echo ""
-          echo "GitHub Spiegel (auto-sync alle 8h + bei Commit):"
-          while IFS='|' read -r name priv desc; do
-              echo "  → https://github.com/$GH_USER/$name"
-          done < /tmp/repos.txt
+      - name: Run migration
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CB_TOKEN: ${{ secrets.CB_TOKEN }}
+          GH_USER:  hcousin
+          CB_USER:  hcousin
+        run: python3 /tmp/migrate.py

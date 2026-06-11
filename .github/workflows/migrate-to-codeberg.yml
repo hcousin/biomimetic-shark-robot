@@ -36,7 +36,7 @@ jobs:
       - name: "[2] Create + Push: SBB_Display_Arduino_GTFSRT"
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-          GH_PAT: ${{ secretus.GH_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://codeberg.org/api/v1/user/repos" \

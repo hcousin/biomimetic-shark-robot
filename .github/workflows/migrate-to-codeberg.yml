@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: "[1] Create + Push: biomimetic-shark-robot"
         env:
-          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           # Try to create repo (OK if already exists - 409)
@@ -35,8 +35,8 @@ jobs:
 
       - name: "[2] Create + Push: SBB_Display_Arduino_GTFSRT"
         env:
-          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          GH_PAT: ${{ secretus.GH_PAT }}
         run: |
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://codeberg.org/api/v1/user/repos" \
@@ -58,7 +58,7 @@ jobs:
 
       - name: "[3] Create + Push: SBB_Display_Arduino_Json (privat)"
         env:
-          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \

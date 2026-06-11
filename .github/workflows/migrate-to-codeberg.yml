@@ -13,22 +13,24 @@ jobs:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          # Create repo on Codeberg (ignore if already exists)
-          curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
+          # Try to create repo (OK if already exists - 409)
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"biomimetic-shark-robot","private":false,"auto_init":false}'
+            -d '{"name":"biomimetic-shark-robot","private":false,"auto_init":false}')
+          echo "Create repo HTTP: $HTTP"
 
-          # Write credentials
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 
-          # Clone and push
           git clone --bare "https://github.com/hcousin/biomimetic-shark-robot.git" r1
           cd r1
-          git push --mirror "https://codeberg.org/hcousin/biomimetic-shark-robot.git"
+          # --force to overwrite any existing content
+          git push --mirror --force "https://codeberg.org/hcousin/biomimetic-shark-robot.git" 2>&1
+          echo "Exit: $?"
           cd .. && rm -rf r1
 
       - name: "[2] Create + Push: SBB_Display_Arduino_GTFSRT"
@@ -36,19 +38,22 @@ jobs:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}'
+            -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}')
+          echo "Create repo HTTP: $HTTP"
 
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 
           git clone --bare "https://github.com/hcousin/SBB_Display_Arduino_GTFSRT.git" r2
           cd r2
-          git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT.git"
+          git push --mirror --force "https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT.git" 2>&1
+          echo "Exit: $?"
           cd .. && rm -rf r2
 
       - name: "[3] Create + Push: SBB_Display_Arduino_Json (privat)"
@@ -56,19 +61,22 @@ jobs:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"SBB_Display_Arduino_Json","private":true,"auto_init":false}'
+            -d '{"name":"SBB_Display_Arduino_Json","private":true,"auto_init":false}')
+          echo "Create repo HTTP: $HTTP"
 
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 
           git clone --bare "https://hcousin:${GH_PAT}@github.com/hcousin/SBB_Display_Arduino_Json.git" r3
           cd r3
-          git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_Json.git"
+          git push --mirror --force "https://codeberg.org/hcousin/SBB_Display_Arduino_Json.git" 2>&1
+          echo "Exit: $?"
           cd .. && rm -rf r3
 
       - name: "Done"

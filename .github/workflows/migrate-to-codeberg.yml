@@ -16,13 +16,13 @@ jobs:
           # Try to create repo (OK if already exists - 409)
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token ${CB_TOKEN}" \
+            -H "Authorization: token ${CODEBERG_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"biomimetic-shark-robot","private":false,"auto_init":false}')
           echo "Create repo HTTP: $HTTP"
 
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CODEBERG_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 
@@ -40,13 +40,13 @@ jobs:
         run: |
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token ${CB_TOKEN}" \
+            -H "Authorization: token ${CODEBERG_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}')
           echo "Create repo HTTP: $HTTP"
 
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CODEBERG_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 
@@ -63,13 +63,13 @@ jobs:
         run: |
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token ${CB_TOKEN}" \
+            -H "Authorization: token ${CODEBERG_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"SBB_Display_Arduino_Json","private":true,"auto_init":false}')
           echo "Create repo HTTP: $HTTP"
 
           git config --global credential.helper store
-          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" > ~/.git-credentials
+          printf 'https://hcousin:%s@codeberg.org\n' "${CODEBERG_TOKEN}" > ~/.git-credentials
           printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
 

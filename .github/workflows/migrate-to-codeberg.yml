@@ -8,50 +8,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ─────────────────────────────────────────────
-      # Setup credentials once
-      # ─────────────────────────────────────────────
-      - name: "Setup git credentials"
-        env:
-          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          git config --global credential.helper store
-          printf "https://hcousin:%s@codeberg.org\nhttps://hcousin:%s@github.com\n" \
-            "${CB_TOKEN}" "${GH_PAT}" > ~/.git-credentials
-          chmod 600 ~/.git-credentials
-
-          echo "=== Codeberg auth check ==="
-          curl -sf "https://codeberg.org/api/v1/user" \
-            -H "Authorization: token ${CB_TOKEN}" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('✅ Codeberg user:', d['login'])"
-
-      # ─────────────────────────────────────────────
-      # REPO 1: biomimetic-shark-robot
-      # ─────────────────────────────────────────────
       - name: "[1] Create + Push: biomimetic-shark-robot"
         env:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          # Create repo on Codeberg (ignore if already exists)
           curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"biomimetic-shark-robot","private":false,"auto_init":false}' \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Repo:', d.get('full_name', d.get('message')))"
+            -d '{"name":"biomimetic-shark-robot","private":false,"auto_init":false}'
 
-          printf "https://hcousin:%s@codeberg.org\nhttps://hcousin:%s@github.com\n" \
-            "${CB_TOKEN}" "${GH_PAT}" > ~/.git-credentials
+          # Write credentials
+          git config --global credential.helper store
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
+          chmod 600 ~/.git-credentials
 
+          # Clone and push
           git clone --bare "https://github.com/hcousin/biomimetic-shark-robot.git" r1
           cd r1
           git push --mirror "https://codeberg.org/hcousin/biomimetic-shark-robot.git"
-          echo "✅ biomimetic-shark-robot pushed"
           cd .. && rm -rf r1
 
-      # ─────────────────────────────────────────────
-      # REPO 2: SBB_Display_Arduino_GTFSRT
-      # ─────────────────────────────────────────────
       - name: "[2] Create + Push: SBB_Display_Arduino_GTFSRT"
         env:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
@@ -60,22 +39,19 @@ jobs:
           curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}' \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Repo:', d.get('full_name', d.get('message')))"
+            -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}'
 
-          printf "https://hcousin:%s@codeberg.org\nhttps://hcousin:%s@github.com\n" \
-            "${CB_TOKEN}" "${GH_PAT}" > ~/.git-credentials
+          git config --global credential.helper store
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
+          chmod 600 ~/.git-credentials
 
           git clone --bare "https://github.com/hcousin/SBB_Display_Arduino_GTFSRT.git" r2
           cd r2
           git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT.git"
-          echo "✅ SBB_Display_Arduino_GTFSRT pushed"
           cd .. && rm -rf r2
 
-      # ─────────────────────────────────────────────
-      # REPO 3: SBB_Display_Arduino_Json (privat)
-      # ─────────────────────────────────────────────
-      - name: "[3] Create + Push: SBB_Display_Arduino_Json"
+      - name: "[3] Create + Push: SBB_Display_Arduino_Json (privat)"
         env:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
@@ -83,21 +59,20 @@ jobs:
           curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
             -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"name":"SBB_Display_Arduino_Json","private":true,"auto_init":false}' \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Repo:', d.get('full_name', d.get('message')))"
+            -d '{"name":"SBB_Display_Arduino_Json","private":true,"auto_init":false}'
 
-          printf "https://hcousin:%s@codeberg.org\nhttps://hcousin:%s@github.com\n" \
-            "${CB_TOKEN}" "${GH_PAT}" > ~/.git-credentials
+          git config --global credential.helper store
+          printf 'https://hcousin:%s@codeberg.org\n' "${CB_TOKEN}" >> ~/.git-credentials
+          printf 'https://hcousin:%s@github.com\n' "${GH_PAT}" >> ~/.git-credentials
+          chmod 600 ~/.git-credentials
 
           git clone --bare "https://hcousin:${GH_PAT}@github.com/hcousin/SBB_Display_Arduino_Json.git" r3
           cd r3
           git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_Json.git"
-          echo "✅ SBB_Display_Arduino_Json pushed"
           cd .. && rm -rf r3
 
-      - name: "🎉 Migration complete"
+      - name: "Done"
         run: |
-          echo "Alle 3 Repos erfolgreich migriert:"
-          echo "  https://codeberg.org/hcousin/biomimetic-shark-robot"
-          echo "  https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT"
-          echo "  https://codeberg.org/hcousin/SBB_Display_Arduino_Json"
+          echo "https://codeberg.org/hcousin/biomimetic-shark-robot"
+          echo "https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT"
+          echo "https://codeberg.org/hcousin/SBB_Display_Arduino_Json"

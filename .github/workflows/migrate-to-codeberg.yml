@@ -1,6 +1,10 @@
 name: Migrate all repos to Codeberg (one-time + mirror setup)
 
 on:
+  push:
+    branches:
+      - main
+      - develop  # Andere Branches spiegeln
   workflow_dispatch:
 
 jobs:

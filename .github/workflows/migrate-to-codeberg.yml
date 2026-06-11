@@ -3,16 +3,10 @@ name: Migrate all repos to Codeberg (one-time + mirror setup)
 on:
   workflow_dispatch:
 
-env:
-  CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-  GH_TOKEN_PAT: ${{ secrets.GH_PAT }}
-  CB_USER: hcousin
-  GH_USER: hcousin
-
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    # Jeder Schritt läuft auch bei Fehler weiter
+
     steps:
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -22,18 +16,28 @@ jobs:
       # ─────────────────────────────────────────────
       - name: "[1] Create on Codeberg: biomimetic-shark-robot"
         continue-on-error: true
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
           resp=$(curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token $CB_TOKEN" \
+            -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"biomimetic-shark-robot","description":"","private":false,"auto_init":false}')
           echo "$resp" | jq '.full_name // .message'
 
       - name: "[1] Mirror push: biomimetic-shark-robot"
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git clone --bare "https://x-token-auth:${GH_TOKEN_PAT}@github.com/${GH_USER}/biomimetic-shark-robot.git" r1
+          git clone --bare "https://hcousin:${GH_PAT}@github.com/hcousin/biomimetic-shark-robot.git" r1
           cd r1
-          git push --mirror "https://${CB_USER}:${CB_TOKEN}@codeberg.org/${CB_USER}/biomimetic-shark-robot.git"
+          # Debug: show remote refs
+          git show-ref | head -5
+          # Push using netrc for clean auth
+          echo "machine codeberg.org login hcousin password ${CB_TOKEN}" > ~/.netrc
+          chmod 600 ~/.netrc
+          git push --mirror "https://codeberg.org/hcousin/biomimetic-shark-robot.git" 2>&1
           cd .. && rm -rf r1
 
       # ─────────────────────────────────────────────
@@ -41,18 +45,25 @@ jobs:
       # ─────────────────────────────────────────────
       - name: "[2] Create on Codeberg: SBB_Display_Arduino_GTFSRT"
         continue-on-error: true
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
           resp=$(curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token $CB_TOKEN" \
+            -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"SBB_Display_Arduino_GTFSRT","description":"ESP32-S3 e-paper SBB departure board using GTFS-RT and OJP APIs from opentransportdata.swiss","private":false,"auto_init":false}')
           echo "$resp" | jq '.full_name // .message'
 
       - name: "[2] Mirror push: SBB_Display_Arduino_GTFSRT"
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git clone --bare "https://x-token-auth:${GH_TOKEN_PAT}@github.com/${GH_USER}/SBB_Display_Arduino_GTFSRT.git" r2
+          echo "machine codeberg.org login hcousin password ${CB_TOKEN}" > ~/.netrc
+          chmod 600 ~/.netrc
+          git clone --bare "https://hcousin:${GH_PAT}@github.com/hcousin/SBB_Display_Arduino_GTFSRT.git" r2
           cd r2
-          git push --mirror "https://${CB_USER}:${CB_TOKEN}@codeberg.org/${CB_USER}/SBB_Display_Arduino_GTFSRT.git"
+          git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT.git" 2>&1
           cd .. && rm -rf r2
 
       # ─────────────────────────────────────────────
@@ -60,23 +71,30 @@ jobs:
       # ─────────────────────────────────────────────
       - name: "[3] Create on Codeberg: SBB_Display_Arduino_Json"
         continue-on-error: true
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
           resp=$(curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
-            -H "Authorization: token $CB_TOKEN" \
+            -H "Authorization: token ${CB_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"name":"SBB_Display_Arduino_Json","description":"","private":true,"auto_init":false}')
           echo "$resp" | jq '.full_name // .message'
 
       - name: "[3] Mirror push: SBB_Display_Arduino_Json"
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git clone --bare "https://x-token-auth:${GH_TOKEN_PAT}@github.com/${GH_USER}/SBB_Display_Arduino_Json.git" r3
+          echo "machine codeberg.org login hcousin password ${CB_TOKEN}" > ~/.netrc
+          chmod 600 ~/.netrc
+          git clone --bare "https://hcousin:${GH_PAT}@github.com/hcousin/SBB_Display_Arduino_Json.git" r3
           cd r3
-          git push --mirror "https://${CB_USER}:${CB_TOKEN}@codeberg.org/${CB_USER}/SBB_Display_Arduino_Json.git"
+          git push --mirror "https://codeberg.org/hcousin/SBB_Display_Arduino_Json.git" 2>&1
           cd .. && rm -rf r3
 
-      - name: "Migration complete"
+      - name: "✅ Migration complete"
         run: |
-          echo "✅ Migration abgeschlossen:"
-          echo "   https://codeberg.org/hcousin/biomimetic-shark-robot"
-          echo "   https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT"
-          echo "   https://codeberg.org/hcousin/SBB_Display_Arduino_Json"
+          echo "Alle 3 Repos migriert:"
+          echo "  https://codeberg.org/hcousin/biomimetic-shark-robot"
+          echo "  https://codeberg.org/hcousin/SBB_Display_Arduino_GTFSRT"
+          echo "  https://codeberg.org/hcousin/SBB_Display_Arduino_Json"

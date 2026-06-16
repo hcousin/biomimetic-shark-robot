@@ -33,7 +33,7 @@ Nocken-Profil (axialer Querschnitt):
   
   Radius-Variation:  R(θ) = R₀ + e·cos(θ)
   
-  Wo:
+  Wobei:
     R₀ = 8 mm    (Mittlerer Radius)
     e  = 3 mm    (Exzentrizität)
     θ  = Winkel auf Nocke (0–360°)
@@ -43,7 +43,7 @@ Nocken-Profil (axialer Querschnitt):
   → Hub pro Schubstange = 2·e = 6 mm linear
 ```
 
-### Schubstangen-Hube in Winkel umrechnen
+### Schubstangen-Hub in Winkel umrechnen
 
 Jede Schubstange sitzt auf einer Gleitschuh-Führung und wandelt lineare Bewegung in Gelenkwinkel um:
 
@@ -53,7 +53,7 @@ h_linear = 6 mm  (max. linearer Hub auf Nocke)
 
 θ_joint = atan(h_linear / L_crank) = atan(6/25) ≈ 13.5° linear → ±27° mit Hebel
 
-Besser: Exzenter + 25mm Schubstange erzeugt sinusoidales Gelenk-Ausgangssignal
+Besser: Exzenter + 25 mm Schubstange erzeugt sinusoidales Gelenk-Ausgangssignal
 der Form:  θ(t) = Θ_max · sin(2πf·t + φ_i)
 ```
 
@@ -87,9 +87,9 @@ Gleitschuh-Positionen auf Nockenwelle (Aufsicht):
         180°
 
 J1 (Position 0°):    θ₁(t) = 25° · sin(2πf·t)
-J2 (Position 90°):   θ₂(t) = 20° · sin(2πf·t − π/2)  ← 90° Phasenlag
-J3 (Position 180°):  θ₃(t) = 15° · sin(2πf·t − π)    ← 180° Phasenlag
-J4 (Position 270°):  θ₄(t) = 10° · sin(2πf·t − 3π/2) ← 270° Phasenlag
+J2 (Position 90°):   θ₂(t) = 20° · sin(2πf·t − π/2)  ← 90° Phasenverzug
+J3 (Position 180°):  θ₃(t) = 15° · sin(2πf·t − π)    ← 180° Phasenverzug
+J4 (Position 270°):  θ₄(t) = 10° · sin(2πf·t − 3π/2) ← 270° Phasenverzug
 
 RESULTAT: Kontinuierliche, rückwärts laufende Körperwelle
           wie bei echtem Haifisch! ✓
@@ -99,7 +99,7 @@ RESULTAT: Kontinuierliche, rückwärts laufende Körperwelle
 
 ## Brushless Motor & ESC
 
-### Motor-Auswahl
+### Motorauswahl
 ```
 Typ:           Outrunner Brushless (KV = 900)
 Leistung:      20–30 W nominal
@@ -107,17 +107,17 @@ Lagerung:      Kugellager (wasserdicht)
 Rotor-Größe:   Ø 35 mm × 25 mm
 Gewicht:       ~60 g
 Größe:         60 × 40 × 20 mm
-Spannung:      3S LiPo 11.1V nominal
+Spannung:      3S LiPo 11.1 V nominal
 Strom:         2.5–3.5 A nominal (5 A Peak bei Anfahrt)
 
 Drehzahl-Bereich:
   KV = 900  →  U[V] × KV = RPM
-  11.1V × 900 = 9990 RPM (Vollgas)
+  11.1 V × 900 = 9990 RPM (Vollgas)
   
 Getriebe 1:3  →  9990 / 3 ≈ 3330 RPM
             ÷ 60 ≈ 55.5 Hz Nockenwellen-Drehzahl
             ÷ 1 Umdrehung = 1 Schwimmzyklus
-            → f_swim = 55.5 Hz Maximal ❌ Viel zu schnell!
+            → f_swim = 55.5 Hz maximal ❌ Viel zu schnell!
 ```
 
 ### RPM-Reduktion notwendig
@@ -127,7 +127,7 @@ Für natürliche Schwimmfrequenzen (0.5–2.0 Hz) brauchen wir:
 ```
 Zielfrequenz: f = 1.5 Hz = 90 Umdrehungen/Minute
 
-Getriebe-Verhältnis:
+Getriebeübersetzung:
   3330 RPM / 90 RPM = 37:1  Gesamtreduktion nötig!
   
 Lösung:
@@ -145,28 +145,28 @@ Lösung:
 ```
 ESC mit BEC (Battery Elimination Circuit) ansteuern
 PWM:  0–5 V (von ESP32 GPIO)
-      0% Duty = 0 RPM
-      50% Duty = 5000 RPM (halb Vollgas)
-      100% Duty = 10000 RPM
+      0 % Duty = 0 RPM
+      50 % Duty = 5000 RPM (halb Vollgas)
+      100 % Duty = 10000 RPM
       
 Mit 40:1 Getriebe:
-  50% Duty → 5000 / 40 = 125 RPM = 2.1 Hz ✓ Perfekt!
-  25% Duty → 2500 / 40 = 62.5 RPM = 1.0 Hz ✓
-  10% Duty → 1000 / 40 = 25 RPM = 0.4 Hz (langsames Rückwärts)
+  50 % Duty → 5000 / 40 = 125 RPM = 2.1 Hz ✓ Perfekt!
+  25 % Duty → 2500 / 40 = 62.5 RPM = 1.0 Hz ✓
+  10 % Duty → 1000 / 40 = 25 RPM = 0.4 Hz (langsames Schwimmen)
 ```
 
 ### ESC-Spezifikation
 
 ```
-Typ:            Brushless ESC (20A kontinuierlich)
+Typ:            Brushless ESC (20 A kontinuierlich)
 Frequenz:       8 kHz PWM
-Spannung:       3S LiPo (11.1V) + 1S Safe
+Spannung:       3S LiPo (11.1 V) + 1S Safe
 Programmierbar: Throttle-Kurve, Bremsart
-Gehäuse:        Aluminiumgehäuse mit Kühlriffel
-Wassergehalt:   Potting-komplett oder teilweise (prüfen!)
-Verkabelung:    2mm Goldstecker (Motor) + JST-SM (BEC out)
+Gehäuse:        Aluminiumgehäuse mit Kühlrippen
+Wasserdichtheit: Potting vollständig oder teilweise (prüfen!)
+Verkabelung:    2 mm Goldstecker (Motor) + JST-SM (BEC out)
 
-Empfehlung: Hobbywing Platinum 20A oder ähnlich
+Empfehlung: Hobbywing Platinum 20 A oder ähnlich
 ```
 
 ---
@@ -174,11 +174,11 @@ Empfehlung: Hobbywing Platinum 20A oder ähnlich
 ## Elektronik-Layout (Vereinfacht)
 
 ```
-LiPo 3S 11.1V
+LiPo 3S 11.1 V
     │
-    ├─→ [BEC 5V/3A] ──→ ESP32 VIN + PCA9685
+    ├─→ [BEC 5 V/3 A] ──→ ESP32 VIN + PCA9685
     │
-    ├─→ [ESC 20A] ←──── PWM Signal (ESP32 Pin 25)
+    ├─→ [ESC 20 A] ←──── PWM-Signal (ESP32 Pin 25)
          │
          └─→ Brushless Motor (3 Phasen)
               │
@@ -194,10 +194,10 @@ LiPo 3S 11.1V
                              └─→ Schubstange J4
                              
 Servo-Kanäle frei:
-  PCA9685 CH0 → Brustflosse Links (unverändert)
-  PCA9685 CH1 → Brustflosse Rechts
+  PCA9685 CH0 → Brustflosse links (unverändert)
+  PCA9685 CH1 → Brustflosse rechts
   PCA9685 CH2 → Ballast-Kolben
-  (Reste frei für Sensoren, Lichter, etc.)
+  (Rest frei für Sensoren, Lichter etc.)
 ```
 
 ---
@@ -212,11 +212,11 @@ Servo-Kanäle frei:
          Gleitschuh         Rückenlager
          (Nylon)            (6001-2RS)
           ╔════╗
-          ║ ● ║ ← Hub linear ±3mm
+          ║ ● ║ ← Hub linear ±3 mm
           ╚════╝
             │
        Schubstange
-       (Al, Ø6 mm)
+       (Al, Ø 6 mm)
             │
         ╭───┴───╮
         │       │
@@ -226,7 +226,7 @@ Servo-Kanäle frei:
         ╱───╲              ╱───╲
        /     \            /     \
    Body A   Link 1    Link 1   Link 2
-   Ø8mm     Ø8mm      Ø8mm     Ø8mm
+   Ø8 mm    Ø8 mm     Ø8 mm    Ø8 mm
    Achsen aus Edelstahl
 ```
 
@@ -235,7 +235,7 @@ Servo-Kanäle frei:
 ## CAD-Teile für 3D-Druck
 
 ### Exzentrische Nockenwelle (NICHT 3D-gedruckt!)
-Muss **Edelstahl gedreht** werden bei lokaler Dreherei. Kosten: ~30–50 CHF.
+Muss **aus Edelstahl gedreht** werden bei einer lokalen Dreherei. Kosten: ~30–50 CHF.
 
 Zeichnung zu bestellen:
 ```
@@ -244,66 +244,66 @@ Zeichnung zu bestellen:
 - Exzentrizität: 3 mm
 - Lagerbohrungen: Ø 6 mm an beiden Enden (6001-Lager)
 - Oberflächengüte: Ra 0.8 µm (poliert)
-- Ausbalancierung: Statisch (wichtig!)
+- Ausbalancierung: statisch (wichtig!)
 ```
 
 ### Gleitschuh-Halter (4× 3D-gedruckt, PETG)
 ```
-Funktion:   Führt Schubstange linear auf Nockenwelle
-Material:   PETG, 50% Infill
-Maße:       12 × 8 × 15 mm
+Funktion:    Führt Schubstange linear auf Nockenwelle
+Material:    PETG, 50 % Infill
+Maße:        12 × 8 × 15 mm
 Lagerfläche: Teflon-beschichtet oder selbstschmierend
-Montage:    An Schubstangen-Halter mit M3-Schraube fixiert
+Montage:     An Schubstangen-Halter mit M3-Schraube fixiert
 ```
 
 ### Schubstangen-Halter (4× 3D-gedruckt, PETG+TPU)
 ```
-Funktion:   Verbindet Gleitschuh → Gelenk-Flansch
-Material:   Basis PETG (oben), TPU-Puffer (unten)
-Länge:      ~25 mm Nutzlänge
-Achsbohrung: Ø 6 mm (für M6 Stift)
-Flexibilität: 1–2 mm seitwärts (Vibration-Dämpfung)
+Funktion:    Verbindet Gleitschuh → Gelenk-Flansch
+Material:    Basis PETG (oben), TPU-Puffer (unten)
+Länge:       ~25 mm Nutzlänge
+Achsbohrung: Ø 6 mm (für M6-Stift)
+Flexibilität: 1–2 mm seitwärts (Vibrationsdämpfung)
 ```
 
 ### Motorhalter-Flansch (1× 3D-gedruckt, PETG)
 ```
-Funktion:   Montiert BL-Motor zentral an Gehäuse
-Material:   PETG, 60% Infill (hohe Steifigkeit)
+Funktion:    Montiert BL-Motor zentral an Gehäuse
+Material:    PETG, 60 % Infill (hohe Steifigkeit)
 Befestigung: 4× M3 zum Rumpf, 4× M2 zum Motor
-Axialspiel: ≤ 0.5 mm (wichtig für Nocken-Ausrichtung)
+Axialspiel:  ≤ 0.5 mm (wichtig für Nocken-Ausrichtung)
 ```
 
 ---
 
-## Frequenz-Steuerung
+## Frequenzsteuerung
 
 ### Mapping RPM → Schwimmfrequenz
 
 ```
 PWM Duty Cycle [%] → ESC → Motor RPM → Nockenwelle RPM → f_swim [Hz]
 
-PWM        ESC     Motor   Nocken-RPM  Freq.   Geschw. Est.
+PWM        ESC     Motor     Nocken-RPM  Freq.   Geschw. Est.
 ────────────────────────────────────────────────────────
-  10%  →  1000V  →  900 RPM   →  22.5   0.38 Hz   0.08 m/s
-  25%  →  2775V  →  2500 RPM  →  62.5   1.04 Hz   0.22 m/s
-  50%  →  5550V  →  5000 RPM  →  125    2.08 Hz   0.44 m/s  ← Standard
-  75%  →  8325V  →  7500 RPM  →  187.5  3.13 Hz   0.66 m/s
- 100%  →  11.1V  →  10000 RPM →  250    4.17 Hz   0.88 m/s  ← Max (zu schnell)
+  10 %  →  1000 V  →   900 RPM →  22.5   0.38 Hz   0.08 m/s
+  25 %  →  2775 V  →  2500 RPM →  62.5   1.04 Hz   0.22 m/s
+  50 %  →  5550 V  →  5000 RPM →  125    2.08 Hz   0.44 m/s  ← Standard
+  75 %  →  8325 V  →  7500 RPM →  187.5  3.13 Hz   0.66 m/s
+ 100 %  →  11.1 V  → 10000 RPM →  250    4.17 Hz   0.88 m/s  ← Max (zu schnell)
 
-Anmerkung: RPM ÷ 60 ÷ Getriebe(40) = Nockenwellen-Hz
+Anmerkung: RPM ÷ 60 ÷ Getriebe (40) = Nockenwellen-Hz
            Nockenwellen-Umdrehung pro Sekunde = Schwimmzyklus-Frequenz
 ```
 
-### Drehzahl-Feedback (optional, für konstante Freq.)
+### Drehzahl-Feedback (optional, für konstante Frequenz)
 
 Magnetischer Encoder auf Nockenwellen-Achse:
 - AS5600 12-bit Rotations-Encoder
-- I²C interface zu ESP32
-- Ermöglicht konstante f bei variabler Last (Wasser-Widerstand)
+- I²C-Schnittstelle zu ESP32
+- Ermöglicht konstante Frequenz bei variabler Last (Wasserwiderstand)
 
 ---
 
-## Montage-Reihenfolge
+## Montagereihenfolge
 
 1. **Nockenwelle vorbereiten**
    - Beide Lagerbuchsen in Halter-Flansch einpressen (6001-2RS)
@@ -329,18 +329,18 @@ Magnetischer Encoder auf Nockenwellen-Achse:
    - Spielfreiheit: ±0.1 mm Axialspiel zulässig
 
 6. **Test im Trockenen**
-   - Motor langsam mit PWM-Signal anfahren (10% DC)
+   - Motor langsam mit PWM-Signal anfahren (10 % DC)
    - Bewegung sollte glatt sein, keine Interferenzen
-   - Alle 4 Gelenke phasenverschoben schwingen?
+   - Schwingen alle 4 Gelenke phasenverschoben?
 
 ---
 
 ## Sicherheit & Wartung
 
 ⚠️ **Wichtig:**
-- Nockenwelle ist **Hochgeschwindigkeits-Komponente** — vollständig abdecken
+- Nockenwelle ist **Hochgeschwindigkeitskomponente** — vollständig abdecken
 - Gelenk-Bewegung kann bei Vollgas Finger einklemmen → Sicherheitsschalter
-- Motor-Drehrichtung: Gegen den Uhrzeiger = Vorwärts (kalibrieren!)
+- Motordrehrichtung: Gegen den Uhrzeigersinn = Vorwärts (kalibrieren!)
 - Schmierung: TL-Gemisch auf Gleitschuh-Nockenwelle, alle 2 Betriebsstunden
 
 ---
@@ -349,12 +349,11 @@ Magnetischer Encoder auf Nockenwellen-Achse:
 
 | Komponente | Material | Kosten |
 |---|---|---|
-| BL Outrunner Motor 20W | Fertig | 15–20 CHF |
-| ESC 20A + BEC | Fertig | 12–18 CHF |
+| BL Outrunner Motor 20 W | Fertig | 15–20 CHF |
+| ESC 20 A + BEC | Fertig | 12–18 CHF |
 | Planetengetriebe 10:1 | Fertig | 20–25 CHF |
 | Schneckenrad 4:1 | Fertig/Gedreht | 15–20 CHF |
 | Nockenwelle Edelstahl (gedreht) | Bestellung Dreherei | 30–50 CHF |
 | 3D-Druck-Teile | PETG/TPU | 20–30 CHF |
 | Kugellager + Kleinteile | — | 15 CHF |
 | **Total Antrieb** | — | **~150 CHF** |
-

@@ -6,13 +6,14 @@
 
 ## 📋 Projektübersicht
 
-Ein biomimetischer Unterwasser-Roboter in Haiform (60–70 cm Länge), der mit **nur 1 Brushless-Motor** eine natürliche Schwimmbewegung erzeugt. Die exzentrische Nockenwelle treibt mechanisch 4 Gelenke mit automatischen Phasenversätzen an — keine komplexe CPG-Software nötig!
+Ein biomimetischer Unterwasser-Roboter in Haiform (60–70 cm Länge), der mit **nur 1 Brushless-Motor** eine natürliche Schwimmbewegung erzeugt. Die exzentrische Nockenwelle treibt mechanisch 4 Gelenke mit **variablen Hebelarm-Längen** an, die eine biologisch authentische, progressive Körperwelle erzeugen.
 
 **Kernfeatures:**
 - ✅ Kontinuierliche Körperwelle (wie echter Hai)
 - ✅ 1× Brushless Motor KV=900 (effizient, wasserdicht)
-- ✅ Mechanische Phasenversätze (Nocken-Geometrie)
-- ✅ 4 Körper-Gelenke (J1–J4) mit ±6.9° Amplitude
+- ✅ **Variable Hebelarm-Längen** für progressive Amplituden
+- ✅ 4 Körper-Gelenke (J1–J4) mit ±11° bis ±27° Amplitude
+- ✅ Automatische Phasenversätze (rein mechanisch)
 - ✅ Tiefenregelung (PID + Ballast)
 - ✅ IMU-Feedback (Brustflossen-Pitch)
 - ✅ WiFi + Serial-Steuerung
@@ -30,8 +31,7 @@ biomimetic-shark-robot/
 ├── mechanics/
 │   └── single_motor_mechanics.md         ← Komplette Mechanik-Dokumentation
 ├── hardware/
-│   ├── nocke_kinematics_specs.txt        ← Nockenwelle-Spezifikation
-│   └── bom_single_motor.csv              ← Stückliste
+│   └── nocke_kinematics_specs.txt        ← Nockenwelle-Spezifikation
 ├── cad/
 │   └── 3d_print_parts.md                 ← STL-Teile-Beschreibung
 ├── docs/
@@ -75,18 +75,30 @@ Zeigt Gelenk-Winkel über einen Schwimmzyklus.
 
 ## 🔧 Mechanik-Highlights
 
-**Exzentrische Nockenwelle:**
+**Exzentrische Nockenwelle (Standard):**
 - R₀ = 8 mm (mittlerer Radius)
 - e = 3 mm (Exzentrizität)
-- Hub: ±3 mm linear → ±6.9° Gelenk
+- Hub: ±6 mm linear (für alle Gelenke gleich)
 - 4 Gleitschuh-Positionen @ 0°, 90°, 180°, 270°
+
+**Variable Hebelarm-Längen (Innovation):**
+```
+Gleicher linearer Hub (±6 mm) aber unterschiedliche Hebel:
+
+J1 (Kopf):       L₁ = 30 mm  →  θ₁ ≈ ±11.3°  (klein)
+J2 (Mitte-v):    L₂ = 25 mm  →  θ₂ ≈ ±13.5°  
+J3 (Mitte-h):    L₃ = 18 mm  →  θ₃ ≈ ±18.4°  
+J4 (Schwanz):    L₄ = 12 mm  →  θ₄ ≈ ±26.6°  (maximal!)
+
+→ Progressive Amplituden zum Schwanz hin, wie echter Fisch!
+```
 
 **Automatische Phasenversätze:**
 ```
-J1 @ 0°:   θ₁(t) = 6.9° · sin(2πf·t + 0°)
-J2 @ 90°:  θ₂(t) = 6.9° · sin(2πf·t − π/2)
-J3 @ 180°: θ₃(t) = 6.9° · sin(2πf·t − π)
-J4 @ 270°: θ₄(t) = 6.9° · sin(2πf·t − 3π/2)
+J1 @ 0°:   θ₁(t) = 11.3° · sin(2πf·t + 0°)
+J2 @ 90°:  θ₂(t) = 13.5° · sin(2πf·t − π/2)
+J3 @ 180°: θ₃(t) = 18.4° · sin(2πf·t − π)
+J4 @ 270°: θ₄(t) = 26.6° · sin(2πf·t − 3π/2)
 ```
 → Kontinuierliche Körperwelle entsteht automatisch!
 
@@ -105,14 +117,14 @@ J4 @ 270°: θ₄(t) = 6.9° · sin(2πf·t − 3π/2)
 | 0.5 Hz | ~1800 RPM | ~0.18 m/s | 2.0 s |
 | 1.0 Hz | ~3600 RPM | ~0.35 m/s | 1.0 s |
 | 1.5 Hz | ~5400 RPM | ~0.53 m/s | 0.67 s |
-| 2.0 Hz | ~7200 RPM | ~0.70 m/s | 0.5 s |
+| 2.0 Hz | ~4800 RPM | ~0.70 m/s | 0.5 s |
 
 ---
 
 ## 🛠️ Montage-Reihenfolge
 
 1. **Nockenwelle vorbereiten** (Dreherei)
-   - Edelstahl, Ø12×120 mm, e=3 mm
+   - Edelstahl, Ø12×120 mm, e=3 mm (STANDARD!)
    - Beide Enden Lager-Bohrungen (Ø6 mm für 6001-Lager)
    
 2. **Motor montieren**
@@ -123,13 +135,16 @@ J4 @ 270°: θ₄(t) = 6.9° · sin(2πf·t − 3π/2)
    - Planetengetriebe 10:1 (im Motor oder extern)
    - Schneckengetriebe 4:1 auf Motorwelle
    
-4. **Gleitschuhe + Schubstangen**
+4. **Gleitschuhe + Zug-Stoß-Stangen**
    - 4 Gleitschuh-Paare auf Nocke (90° Versatz)
-   - Schubstangen (25 mm Aluminium) anschrauben
+   - Zug-Stoß-Stangen (25 mm Aluminium) anschrauben
    
-5. **Gelenk-Flansche verbinden**
-   - An 4 Körper-Segmente anschließen
-   - Test im Trockenen (keine Interferenzen?)
+5. **Variable Gelenk-Flansche verbinden**
+   - J1 (L₁=30mm) → Körper-Segment 1
+   - J2 (L₂=25mm) → Körper-Segment 2
+   - J3 (L₃=18mm) → Körper-Segment 3
+   - J4 (L₄=12mm) → Schwanz-Segment
+   - **Wichtig:** Unterschiedliche Hebellängen beachten!
    
 6. **Elektronik + Sensorik**
    - ESP32 + MS5837 + MPU6050 + ESC
@@ -167,17 +182,17 @@ status              → Telemetrie anzeigen
 | Brushless Motor | 15–20 CHF |
 | ESC 20 A | 12–18 CHF |
 | Getriebe (2× Set) | 35–45 CHF |
-| **Nockenwelle (gedreht)** | **30–50 CHF** |
-| 3D-Druck (PETG/TPU) | 20–30 CHF |
+| **Nockenwelle (Standard, e=3mm)** | **30–40 CHF** |
+| **Variable 3D-Druck-Flansche** | **25–35 CHF** |
 | Sensoren + Elektronik | ~100 CHF |
 | Akku, Dichtung, Kleinteile | ~30 CHF |
-| **TOTAL** | **~280–350 CHF** |
+| **TOTAL** | **~280–330 CHF** |
 
 ---
 
 ## 📚 Dokumentation
 
-- **`single_motor_mechanics.md`** — Komplette mechanische Spezifikation
+- **`single_motor_mechanics.md`** — Komplette mechanische Spezifikation mit variablen Hebelarmen
 - **`nocke_kinematik.py`** — Kinematik-Simulator + Visualisierung
 - **`shark_single_motor_firmware.ino`** — Produktionsreifer ESP32-Code
 - **`strouhal_optimizer.py`** — Hydrodynamik-Optimierer
@@ -190,7 +205,11 @@ status              → Telemetrie anzeigen
 
 **BCF Carangiform Schwimmen:**
 Die kontinuierliche Körperwelle breitet sich vom Kopf zur Schwanzspitze aus.
-Mit 4 Gelenken bei 90° Phasenverlauf erreichen wir biologisch optimale Bewegungen.
+Mit variablen Hebelarmen erreichen wir biologisch optimale Bewegungen mit einer Standard-Nockenwelle.
+
+**Progressive Amplituden:**
+Anders als viele Roboter-Fische mit konstanten Gelenk-Winkeln erzeugt dieses Design
+eine naturalistische Amplitudenprogredienz (11° → 27°), wie sie echte Fische haben.
 
 **Strouhal-Optimierung:**
 St = f·A/U ≈ 0.25–0.35 (optimal für echte Haie)
@@ -225,7 +244,7 @@ Hydrodynamik-Optimierung? → Siehe `strouhal_optimizer.py`
 
 ---
 
-**Status:** ✅ Vollständig dokumentiert (Stand: Juni 2026)
+**Status:** ✅ Vollständig dokumentiert mit variablem Hebelarm-Design (Stand: Juni 2026)
 **Zielgruppe:** Maker, Robotik-Enthusiasten, Biomimetic-Forscher
 **Schwierigkeitsgrad:** ⭐⭐⭐ Mittel (Mechanik-Kenntnisse hilfreich)
 

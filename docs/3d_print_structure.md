@@ -37,27 +37,29 @@ shark_robot/
 Die Innovation des Redesigns liegt hier: **Jeder Flansch hat eine unterschiedliche Hebellänge!**
 
 ```
-             Nocke (Standard: e=3mm, linearer Hub ±6mm überall)
+             Nocke (Standard: e=3mm, linearer Hub ±3mm überall)
                     ↓
     ┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
     │                 │                 │                 │                 │
    J1 (L=30mm)      J2 (L=25mm)      J3 (L=18mm)      J4 (L=12mm)
     ↓                 ↓                 ↓                 ↓
-  ±11.3°            ±13.5°            ±18.4°            ±26.6°  ← MAXIMAL!
+   ±5.7°             ±6.9°             ±9.6°            ±14.5°  ← MAXIMAL!
   (klein)           (mittel)          (groß)            (sehr groß)
   Kopf-nah          Vorder-mitte      Hinter-mitte      SCHWANZ
 ```
+
+Amplitude: `arcsin(e / L)` mit e=3mm (Exzentrizität der Nockenwelle)
 
 ### tail_link_j1.stl — **Kopf-nahes Gelenk (Hebel L₁ = 30 mm)**
 
 ```yaml
 Beschreibung:    Gelenk-Flansch J1 mit LANGER Hebellänge
-Hebel-Länge:     L₁ = 30 mm  →  θ_max ≈ ±11.3°
+Hebel-Länge:     L₁ = 30 mm  →  θ_max ≈ ±5.7°
 Maße:            65 × 40 × 20 mm
 Material:        PETG, 50 % Infill
 Achse:           Ø 8 mm Edelstahl-Bolzen (M8), beidseitig kugelgelagert
 Zug-Stoß-Punkt:  30 mm von Gelenkachse entfernt
-                 Resultat: arctan(6mm / 30mm) ≈ ±11.3°
+                 Resultat: arcsin(3mm / 30mm) ≈ ±5.7°
 Besonderheit:    - Sanfte Bewegung, kleine Amplitude
                  - Kopfbereich (stabiler, weniger Belastung)
                  - 2× Ø 6 mm Kugellager (626-ZZ) seitlich
@@ -68,11 +70,12 @@ Montage:         An body_mid mit 2× M3-Senkkopfschrauben
 
 ```yaml
 Beschreibung:    Gelenk-Flansch J2 mit MITTLERER Hebellänge
-Hebel-Länge:     L₂ = 25 mm  →  θ_max ≈ ±13.5°
+Hebel-Länge:     L₂ = 25 mm  →  θ_max ≈ ±6.9°
 Maße:            60 × 38 × 20 mm
 Material:        PETG, 50 % Infill
 Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
 Zug-Stoß-Punkt:  25 mm von Gelenkachse entfernt
+                 Resultat: arcsin(3mm / 25mm) ≈ ±6.9°
 Besonderheit:    - Transition zwischen Kopf und Hintermitte
                  - Mittlere Belastung
 Montage:         Kettenartig nach J1 verbunden
@@ -82,11 +85,12 @@ Montage:         Kettenartig nach J1 verbunden
 
 ```yaml
 Beschreibung:    Gelenk-Flansch J3 mit KURZER Hebellänge
-Hebel-Länge:     L₃ = 18 mm  →  θ_max ≈ ±18.4°
+Hebel-Länge:     L₃ = 18 mm  →  θ_max ≈ ±9.6°
 Maße:            50 × 32 × 18 mm
 Material:        PETG, 50 % Infill
 Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
 Zug-Stoß-Punkt:  18 mm von Gelenkachse entfernt
+                 Resultat: arcsin(3mm / 18mm) ≈ ±9.6°
 Besonderheit:    - Größere Amplitude als J1/J2
                  - Höhere Belastung beginnt
                  - Schwanzbereich-Start
@@ -97,12 +101,12 @@ Montage:         Nach J2, vor Schwanz
 
 ```yaml
 Beschreibung:    Gelenk-Flansch J4 mit KÜRZESTER Hebellänge (maximal!)
-Hebel-Länge:     L₄ = 12 mm  →  θ_max ≈ ±26.6°  ← MAXIMAL!
+Hebel-Länge:     L₄ = 12 mm  →  θ_max ≈ ±14.5°  ← MAXIMAL!
 Maße:            48 × 30 × 18 mm (kompakt, hohe Kraft)
 Material:        PETG, 60 % Infill  ← HÖHER (mehr Steifigkeit für Kräfte!)
 Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
 Zug-Stoß-Punkt:  12 mm von Gelenkachse entfernt
-                 Resultat: arctan(6mm / 12mm) ≈ ±26.6°
+                 Resultat: arcsin(3mm / 12mm) ≈ ±14.5°
 Besonderheit:    ✓ Größte Amplitude!
                  ✓ Höchste mechanische Belastung
                  ✓ 60% Infill für extra Steifigkeit
@@ -152,7 +156,7 @@ Druckzeit    : ~4–5 h
 Beschreibung : Gleitschuh, sitzt auf Nockenwelle
 Maße         : 12 × 8 × 15 mm
 Material     : PETG, 50 % Infill
-Menge        : 4 Stück (all identical)
+Menge        : 4 Stück (alle identisch)
 Druckzeit    : ~5 Min je Teil
 ```
 
@@ -161,7 +165,7 @@ Druckzeit    : ~5 Min je Teil
 Beschreibung : Zug-Stoß-Stange (verbindet Gleitschuh mit Gelenk-Flansch)
 Maße         : Ø 6 mm × 25 mm Länge
 Material     : PETG oder TPU (flexibel)
-Menge        : 4 Stück (all identical)
+Menge        : 4 Stück (alle identisch)
 Druckzeit    : ~10 Min je Teil
 ```
 
@@ -190,7 +194,7 @@ Druckzeit    : ~1–1.5 h
 | **pectoral_mount_L/R** | PETG | 0.20 | 40% | 4 | Ja | 20 je Teil |
 | **dorsal_fin** | PLA+ | 0.20 | 15% | 3 | Nein | 20 |
 
-**Gesamtdruckzeit: ~15–18 Stunden** (etwas schneller durch progressive Hebelarm-Teile)
+**Gesamtdruckzeit: ~15–18 Stunden**
 
 ---
 
@@ -234,21 +238,23 @@ Die 4 Flansche können parametrisch mit OpenSCAD generiert werden:
 // tail_link_parametric.scad
 // Erzeugt J1, J2, J3, J4 durch Änderung von 'lever_length'
 
-lever_length = 30;  // ← Ändere auf 30, 25, 18, oder 12 für J1–J4
+lever_length = 30;  // ← Ändere auf 30, 25, 18 oder 12 für J1–J4
 joint_name = "J1";
 
-// Hauptflansch (trapezoid)
+// Maximale Amplitude (zur Info)
+// theta_max = arcsin(3 / lever_length) [mm]
+
 difference() {
     // Außenkörper
     cube([65, 40, 20], center=true);
-    
+
     // Inneres Loch für Achse
     cylinder(h=25, r=4, $fn=32, center=true);
-    
+
     // Zug-Stoß-Punkt
     translate([lever_length/2, 0, 0])
         cube([8, 8, 25], center=true);
-    
+
     // Lagersitze (beidseitig)
     translate([0, -20, 0])
         cylinder(h=25, r=3, $fn=32, center=true);
@@ -265,7 +271,8 @@ Mit diesem Skript können alle 4 Flansche schnell generiert werden!
 
 ## ✅ Konsistenz-Checkliste
 
-- ✓ **Firmware** (`nocke_kinematik.py`): Progressive Hebelarm-Längen dokumentiert
+- ✓ **Firmware** (`nocke_kinematik.py`): Progressive Hebelarm-Längen implementiert
+- ✓ **Amplituden**: Korrekt mit arcsin(e/L), e=3mm
 - ✓ **3D-Druck** (diese Datei): 4 unterschiedliche Gelenk-Flansche spezifiziert
 - ✓ **Montage**: Klare Unterscheidung J1 vs. J2 vs. J3 vs. J4
 - ✓ **Material**: J4 mit 60% Infill für höhere Belastung
@@ -274,5 +281,5 @@ Mit diesem Skript können alle 4 Flansche schnell generiert werden!
 
 ---
 
-**Status:** 🟢 Konsistent mit Redesign (Variable Hebelarm-System)  
-**Nächster Schritt:** CAD-Dateien generieren oder hochladen
+**Status:** 🟢 Konsistent mit Redesign (Variable Hebelarm-System)
+**Nächster Schritt:** BOM aktualisieren

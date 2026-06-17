@@ -8,7 +8,13 @@
  *    - ESP32 DevKit
  *    - Brushless Outrunner Motor (KV=900)
  *    - ESC 20A mit PWM-Input
- *    - Exzentrische Nockenwelle (mechanisch 4 Gelenke)
+ *    - Exzentrische Nockenwelle (Standard: e=3mm)
+ *    - 4 Gelenk-Flansche mit VARIABLEN Hebelarmen:
+ *        J1 (L=30mm) → ±5.7°   Kopf-nah
+ *        J2 (L=25mm) → ±6.9°   Vordermitte
+ *        J3 (L=18mm) → ±9.6°   Hintermitte
+ *        J4 (L=12mm) → ±14.5°  Schwanz (maximal!)
+ *      Amplitude = arcsin(e / L)
  *    - 2× MG90S Brustflossen-Servo
  *    - 1× MG996R Ballast-Servo
  *    - MS5837-30BA Drucksensor
@@ -24,6 +30,10 @@
  *    - Motor-Drehzahl (via ESC PWM)
  *    - Brustflossen-Pitch (IMU-Feedback)
  *    - Tiefe (Ballast-PID)
+ *
+ *  Die progressiven Amplituden (J1 < J2 < J3 < J4) entstehen
+ *  automatisch durch die unterschiedlichen Hebellängen —
+ *  keine Software-CPG nötig!
  * ============================================================
  */
 
@@ -53,6 +63,20 @@
 #define ESC_MID_PWM    4915    // 1500 µs (neutral, manche ESCs)
 #define ESC_MAX_PWM    6553    // 2000 µs
 
+// ─── Nockenwellen-Kinematik (Variable Hebelarme) ────────────
+// Hebelarm-Längen pro Gelenk [mm]:
+//   L1=30, L2=25, L3=18, L4=12
+// Exzentrizität der Nockenwelle: e=3mm
+// Amplitude[i] = arcsin(e / L[i])
+//   J1: arcsin(3/30) ≈ ±5.7°  (Kopf-nah, kleine Auslenkung)
+//   J2: arcsin(3/25) ≈ ±6.9°
+//   J3: arcsin(3/18) ≈ ±9.6°
+//   J4: arcsin(3/12) ≈ ±14.5° (Schwanz, maximale Auslenkung!)
+// Phasenversätze (mechanisch durch Gleitschuh-Position):
+//   J1 @ 0°, J2 @ 90°, J3 @ 180°, J4 @ 270°
+// → Kontinuierliche Körperwelle entsteht REIN MECHANISCH.
+// Für Simulation: siehe firmware/nocke_kinematik.py
+
 // ─── Motorsteuerung Parameter ───────────────────────────────
 struct MotorControl {
   float throttle      = 0.0f;    // 0.0 – 1.0 (0–100%)
@@ -62,7 +86,7 @@ struct MotorControl {
   
   // RPM-Feedback (optional mit Encoder)
   float rpm           = 0.0f;
-  float freq_swim     = 0.0f;    // Berechnete Schwimmfrequenz
+  float freq_swim     = 0.0f;    // Berechnete Schwimmfrequenz [Hz]
 } motor;
 
 // ─── Tiefenregler & Ballast ─────────────────────────────────
@@ -197,8 +221,10 @@ void motor_update(float dt_s) {
   
   // Berechne geschätzte Schwimmfrequenz
   // Motor RPM = throttle × max_rpm = throttle × 9990
-  // Mit Getriebe 40:1 → Nockenwellen-RPM = Motor_RPM / 40
-  // Frequenz = Nockenwellen-RPM / 60
+  // Getriebe 40:1 (10:1 Planetengetriebe × 4:1 Schneckengetriebe)
+  // → Nockenwellen-RPM = Motor_RPM / 40
+  // Schwimmfrequenz = Nockenwellen-RPM / 60
+  // Variable Hebelarme ändern NUR die Amplitude, NICHT die Frequenz!
   float motor_rpm = motor.throttle * 9990.0f;
   float nocke_rpm = motor_rpm / 40.0f;
   motor.freq_swim = nocke_rpm / 60.0f;
@@ -248,7 +274,7 @@ void parseUDP() {
   udp.read((uint8_t*)udpBuf, sizeof(udpBuf)-1);
   udpBuf[len] = 0;
   
-  // Einfacher Text-Parser (kein JSON nötig für Single Motor)
+  // Einfacher Text-Parser
   // Format: "THROTTLE 0.5"  oder "DEPTH 1.0"  oder "STOP"
   
   String s(udpBuf);
@@ -303,6 +329,10 @@ void parseSerial() {
                   motor.throttle*100.0f, motor.freq_swim, motor.throttle * 9990.0f);
     Serial.printf("Ballast: %d | Pect-L: %.1f° | Pect-R: %.1f°\n",
                   ballastPos, pectoral.pitch_left, pectoral.pitch_right);
+    // Gelenk-Amplituden Info (rein mechanisch, nur zur Info)
+    Serial.println("Gelenk-Amplituden (mechanisch, variable Hebelarme):");
+    Serial.println("  J1 (L=30mm): ±5.7°  | J2 (L=25mm): ±6.9°");
+    Serial.println("  J3 (L=18mm): ±9.6°  | J4 (L=12mm): ±14.5°");
   }
   else if (s.startsWith("throttle ")) {
     motor.throttle_set = constrain(s.substring(9).toFloat(), 0.0f, 1.0f);
@@ -327,8 +357,9 @@ void setup() {
   Wire.setClock(400000);
   
   Serial.println("\n╔═══════════════════════════════════════════╗");
-  Serial.println("║  HAIFISCH-ROBOTER — SINGLE MOTOR v1.0   ║");
-  Serial.println("║  Exzentrische Nockenwelle                ║");
+  Serial.println("║  HAIFISCH-ROBOTER — SINGLE MOTOR v1.1   ║");
+  Serial.println("║  Variable Hebelarme J1=30/J2=25/         ║");
+  Serial.println("║  J3=18/J4=12mm | Nockenwelle e=3mm      ║");
   Serial.println("╚═══════════════════════════════════════════╝\n");
   
   motor_init();
@@ -354,7 +385,6 @@ void setup() {
 // ════════════════════════════════════════════════════════════
 void loop() {
   uint32_t now = millis();
-  static float loop_dt = 0.01f;
   
   // 1. Sensor-Update @ 20 Hz
   if (now - lastSensor >= SENSOR_DT_MS) {
@@ -363,7 +393,7 @@ void loop() {
     ms5837_read();
   }
   
-  // 2. Motor-Update (kontinuierlich, aber dt begrenzt)
+  // 2. Motor-Update (kontinuierlich, dt begrenzt)
   static uint32_t lastMotor = 0;
   if (now - lastMotor >= 10) {
     lastMotor = now;

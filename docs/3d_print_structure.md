@@ -1,285 +1,220 @@
-# 3D-Druckdateien-Struktur: Biomimetischer Haifisch-Roboter (Variable Hebelarm-Design)
+# 3D-Druckdateien-Struktur: Hybrid-Design (Aktive J1/J2 + Passive J3/J4)
 
-## Gesamtübersicht der Druckteile (Stufe 2, 60 cm)
+> **Branch:** `dev/hybrid-passive-tail`
+> **Design:** Kurze Nockenwelle (60mm) für J1+J2 aktiv, TPU-Federblöcke für J3+J4 passiv
+
+---
+
+## Dateistruktur
 
 ```
 shark_robot/
 ├── body/
-│   ├── body_front.stl          ← Vorderer Elektronikrumpf
-│   ├── body_mid.stl            ← Mittelteil (Verbindungsstück)
-│   ├── body_lid_front.stl      ← Deckel vorne (O-Ring-Flansch)
-│   └── ballast_cylinder.stl    ← Ballastzylinder Ø 30 mm
+│   ├── body_front.stl             ← Vorderer Elektronikrumpf (unverändert)
+│   ├── body_mid.stl               ← Mittelteil (unverändert)
+│   ├── body_lid_front.stl         ← Deckel vorne (unverändert)
+│   └── ballast_cylinder.stl       ← Ballastzylinder (unverändert)
 ├── tail/
-│   ├── tail_link_j1.stl        ← Gelenk-Flansch J1 (Hebel L1=30mm)
-│   ├── tail_link_j2.stl        ← Gelenk-Flansch J2 (Hebel L2=25mm)
-│   ├── tail_link_j3.stl        ← Gelenk-Flansch J3 (Hebel L3=18mm)
-│   ├── tail_link_j4.stl        ← Gelenk-Flansch J4 (Hebel L4=12mm) — MAXIMAL!
-│   ├── cam_follower.stl        ← Gleitschuh (×4 identisch)
-│   └── crank_rod.stl           ← Zug-Stoß-Stange (×4 identisch)
-├── fins/
-│   ├── pectoral_mount_left.stl    ← Brustflosse links, Montage
-│   ├── pectoral_mount_right.stl   ← Brustflosse rechts, Montage
-│   └── dorsal_fin.stl             ← Rückenflosse (dekorativ)
-├── molds/
-│   ├── silikon_form_flosse.stl    ← Negativform Schwanzflosse
-│   └── (weitere Silikonformen für Brustflossen)
+│   ├── tail_link_j1.stl           ← Aktiver Gelenk-Flansch J1 (L=30mm)
+│   ├── tail_link_j2.stl           ← Aktiver Gelenk-Flansch J2 (L=25mm)
+│   ├── tpu_joint_j3.stl           ← Passiver TPU-Federblock J3 (Shore 95A)
+│   ├── tpu_joint_j4.stl           ← Passiver TPU-Federblock J4 (Shore 85A)
+│   ├── cam_follower.stl           ← Gleitschuh (×2 identisch, nicht ×4!)
+│   └── crank_rod.stl              ← Zug-Stoß-Stange (×2 identisch)
+├── fins/                          ← Unverändert
+├── molds/                         ← Unverändert
 └── misc/
-    ├── cable_guide.stl         ← Kabelführung durch Gelenke
-    ├── imu_mount.stl           ← IMU-Halterung (innen)
-    ├── motor_mount_flange.stl  ← Motor-Flansch mit Nocken-Lagern
-    └── servo_mount_j1.stl      ← Servo-Halter (optional)
+    ├── nocken_halter_kurz.stl     ← NEU: Motorhalter für 60mm Nockenwelle
+    ├── cable_guide.stl            ← Unverändert
+    ├── imu_mount.stl              ← Unverändert
+    └── depth_sensor_port.stl      ← Unverändert
 ```
 
 ---
 
-## 🔴 KRITISCH: Neue Gelenk-Flansche mit variablen Hebelarmen!
+## 🔴 Aktive Gelenke (Nockenwelle)
 
-Die Innovation des Redesigns liegt hier: **Jeder Flansch hat eine unterschiedliche Hebellänge!**
-
-```
-             Nocke (Standard: e=3mm, linearer Hub ±3mm überall)
-                    ↓
-    ┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
-    │                 │                 │                 │                 │
-   J1 (L=30mm)      J2 (L=25mm)      J3 (L=18mm)      J4 (L=12mm)
-    ↓                 ↓                 ↓                 ↓
-   ±5.7°             ±6.9°             ±9.6°            ±14.5°  ← MAXIMAL!
-  (klein)           (mittel)          (groß)            (sehr groß)
-  Kopf-nah          Vorder-mitte      Hinter-mitte      SCHWANZ
-```
-
-Amplitude: `arcsin(e / L)` mit e=3mm (Exzentrizität der Nockenwelle)
-
-### tail_link_j1.stl — **Kopf-nahes Gelenk (Hebel L₁ = 30 mm)**
+### tail_link_j1.stl — Aktives Gelenk J1 (Hebel L₁ = 30mm)
 
 ```yaml
-Beschreibung:    Gelenk-Flansch J1 mit LANGER Hebellänge
-Hebel-Länge:     L₁ = 30 mm  →  θ_max ≈ ±5.7°
-Maße:            65 × 40 × 20 mm
-Material:        PETG, 50 % Infill
-Achse:           Ø 8 mm Edelstahl-Bolzen (M8), beidseitig kugelgelagert
-Zug-Stoß-Punkt:  30 mm von Gelenkachse entfernt
-                 Resultat: arcsin(3mm / 30mm) ≈ ±5.7°
-Besonderheit:    - Sanfte Bewegung, kleine Amplitude
-                 - Kopfbereich (stabiler, weniger Belastung)
-                 - 2× Ø 6 mm Kugellager (626-ZZ) seitlich
-Montage:         An body_mid mit 2× M3-Senkkopfschrauben
+Funktion:        Kopfnahes Gelenk, aktiv von Nockenwelle angetrieben
+Hebel-Länge:     L₁ = 30mm → arcsin(3/30) ≈ ±5.7°
+Maße:            65 × 40 × 20mm
+Material:        PETG, 50% Infill
+Achse:           Ø8mm Edelstahl-Bolzen (M8), 2× Kugellager 626-ZZ
+Zug-Stoß-Punkt:  30mm von Gelenkachse
+Montage:         An body_mid mit 2× M3-Schrauben
+Druckzeit:       ~35 Min
 ```
 
-### tail_link_j2.stl — **Vordermitte-Gelenk (Hebel L₂ = 25 mm)**
+### tail_link_j2.stl — Aktives Gelenk J2 (Hebel L₂ = 25mm)
 
 ```yaml
-Beschreibung:    Gelenk-Flansch J2 mit MITTLERER Hebellänge
-Hebel-Länge:     L₂ = 25 mm  →  θ_max ≈ ±6.9°
-Maße:            60 × 38 × 20 mm
-Material:        PETG, 50 % Infill
-Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
-Zug-Stoß-Punkt:  25 mm von Gelenkachse entfernt
-                 Resultat: arcsin(3mm / 25mm) ≈ ±6.9°
-Besonderheit:    - Transition zwischen Kopf und Hintermitte
-                 - Mittlere Belastung
-Montage:         Kettenartig nach J1 verbunden
-```
-
-### tail_link_j3.stl — **Hintermitte-Gelenk (Hebel L₃ = 18 mm)**
-
-```yaml
-Beschreibung:    Gelenk-Flansch J3 mit KURZER Hebellänge
-Hebel-Länge:     L₃ = 18 mm  →  θ_max ≈ ±9.6°
-Maße:            50 × 32 × 18 mm
-Material:        PETG, 50 % Infill
-Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
-Zug-Stoß-Punkt:  18 mm von Gelenkachse entfernt
-                 Resultat: arcsin(3mm / 18mm) ≈ ±9.6°
-Besonderheit:    - Größere Amplitude als J1/J2
-                 - Höhere Belastung beginnt
-                 - Schwanzbereich-Start
-Montage:         Nach J2, vor Schwanz
-```
-
-### tail_link_j4.stl — **Schwanz-Gelenk (Hebel L₄ = 12 mm) — MAXIMAL!**
-
-```yaml
-Beschreibung:    Gelenk-Flansch J4 mit KÜRZESTER Hebellänge (maximal!)
-Hebel-Länge:     L₄ = 12 mm  →  θ_max ≈ ±14.5°  ← MAXIMAL!
-Maße:            48 × 30 × 18 mm (kompakt, hohe Kraft)
-Material:        PETG, 60 % Infill  ← HÖHER (mehr Steifigkeit für Kräfte!)
-Achse:           Ø 8 mm Edelstahl-Bolzen (M8)
-Zug-Stoß-Punkt:  12 mm von Gelenkachse entfernt
-                 Resultat: arcsin(3mm / 12mm) ≈ ±14.5°
-Besonderheit:    ✓ Größte Amplitude!
-                 ✓ Höchste mechanische Belastung
-                 ✓ 60% Infill für extra Steifigkeit
-                 ✓ Schwanzspitze — maximale Auslenkung wie echter Fisch!
-Montage:         Am Ende der Gelenkkette, vor Schwanzflosse
+Funktion:        Zweites aktives Gelenk, 90° Phasenversatz zu J1
+Hebel-Länge:     L₂ = 25mm → arcsin(3/25) ≈ ±6.9°
+Maße:            60 × 38 × 20mm
+Material:        PETG, 50% Infill
+Achse:           Ø8mm Edelstahl-Bolzen (M8), 2× Kugellager 626-ZZ
+Zug-Stoß-Punkt:  25mm von Gelenkachse
+Montage:         Kettenartig nach J1
+Druckzeit:       ~30 Min
 ```
 
 ---
 
-## Allgemeine Spezifikationen für alle Gelenk-Flansche
+## 🟢 Passive Gelenke (TPU-Federblöcke)
+
+> Keine separaten Flansche mit Hebeln! Die Bewegung entsteht durch
+> Trägheit + Wasserkräfte + TPU-Rückstellkraft — wie bei echten Haifischen.
+
+### tpu_joint_j3.stl — Passiver Federblock J3
 
 ```yaml
-Symmetrie:       Alle Flansche sind mittig durchbohrt (Achse Ø 8 mm)
-Außen-Lager:     2× Ø 6 mm Kugellager (626-ZZ) beidseitig
-                 (erlauben freie Rotation um Achse)
+Funktion:        Elastisches Verbindungsstück zwischen Segment 2 und 3
+Material:        TPU 95A (mittelharte Feder)
+Maße:            20 × 15 × 10mm
+Infill:          25% Gyroid (weich, gleichmäßig)
+Wandstärke:      1.2mm (3 Perimeter à 0.4mm)
+Federstahl:      EMPFOHLEN: 0.3mm × 8mm Streifen bei Z=5mm einlegen
+                 → Verhindert Überdehnung, definiert Mindeststeifigkeit
+Montage:         Mit Silikonkleber zwischen Segment 2 + 3 einkleben
+                 ODER 2× M2-Schrauben (Bohrungen im Block vorhanden)
+Resonanz:        f_res ≈ 1.0 Hz → optimal bei ~25% Throttle
+Erwartete Amp.:  ±8–10° bei 1.0 Hz Schwimmfrequenz
+Druckzeit:       ~8 Min
+Drucker:         ⚠️ Nur Direct-Drive-Extruder (kein Bowden für TPU!)
+```
 
-Schubstangen-Anschluss:
-                 - Obere Fläche hat konisches Loch für M6-Bolzen
-                 - Zug-Stoß-Stange wird mit M6 + Federscheibe befestigt
-                 - ±0.1 mm Spielfreiheit für glatte Bewegung
+### tpu_joint_j4.stl — Passiver Federblock J4
 
-Montagepunkte:   - Hinten: Verbindung zum Körper (M3 Schraube)
-                 - Seiten: Kugellagersitze (Ø 6 mm Welle)
-                 - Oben: Schubstangen-Anschluss (M6 Bolzen)
-
-Materialwahl:    PETG (besser als PLA für Wasserdruck)
-                 J1–J3: 50 % Infill
-                 J4:    60 % Infill (höhere Belastung!)
-
-Druckzeit:       J1/J2/J3/J4: ~30–45 Min je Teil (schnell!)
+```yaml
+Funktion:        Elastisches Verbindungsstück zwischen Segment 3 und Schwanzflosse
+Material:        TPU 85A (weicher als J3 — mehr Nachschwingen!)
+Maße:            15 × 12 × 8mm
+Infill:          20% Gyroid (sehr weich)
+Wandstärke:      0.8mm (2 Perimeter à 0.4mm)
+Federstahl:      EMPFOHLEN: 0.3mm × 6mm Streifen, leicht zur Hinterkante gebogen
+                 → Gibt Schwanzflosse einen natürlichen Anstellwinkel
+Montage:         Direkt an Schwanzflosse angeklebt (Epoxy oder Silikonkleber)
+Resonanz:        f_res ≈ 0.8 Hz → leichtes Nachschwingen bei allen Frequenzen
+Erwartete Amp.:  ±12–18° (Resonanzverstärkung bei ~0.8 Hz!)
+Druckzeit:       ~5 Min
+Drucker:         ⚠️ Nur Direct-Drive-Extruder (kein Bowden für TPU!)
 ```
 
 ---
 
-## Andere 3D-Druck-Teile (UNVERÄNDERT)
+## Vergleich: Altes Design vs. Hybrid
 
-### body_front.stl
-```
-Beschreibung : Hauptelektronikgehäuse, torpedoförmig
-Außenmaße    : 200 mm L × Ø 80 mm
-Material     : PETG, 30 % Infill
-Druckzeit    : ~4–5 h
-```
-
-### cam_follower.stl (×4 identisch)
-```
-Beschreibung : Gleitschuh, sitzt auf Nockenwelle
-Maße         : 12 × 8 × 15 mm
-Material     : PETG, 50 % Infill
-Menge        : 4 Stück (alle identisch)
-Druckzeit    : ~5 Min je Teil
-```
-
-### crank_rod.stl (×4 identisch)
-```
-Beschreibung : Zug-Stoß-Stange (verbindet Gleitschuh mit Gelenk-Flansch)
-Maße         : Ø 6 mm × 25 mm Länge
-Material     : PETG oder TPU (flexibel)
-Menge        : 4 Stück (alle identisch)
-Druckzeit    : ~10 Min je Teil
-```
-
-### motor_mount_flange.stl
-```
-Beschreibung : Motorhalter mit Nockenwellen-Lagern (6001-2RS)
-Material     : PETG, 60 % Infill (hohe Steifigkeit!)
-Besonderheit : 2× Ø 12 mm Lagerbuchsen-Sitze (6001er Lager)
-Druckzeit    : ~1–1.5 h
-```
+| Teil | Altes Design (4× aktiv) | Hybrid (2× aktiv + 2× passiv) |
+|---|---|---|
+| Nockenwelle | 120mm, 4 Gleitschuhe | **60mm, 2 Gleitschuhe** |
+| Gelenk-Flansche | 4× PETG (komplex) | **2× PETG + 2× TPU (einfach)** |
+| Zug-Stoß-Stangen | 4 Stück | **2 Stück** |
+| Druckteile total | ~13 STL | **~11 STL** |
+| Montage-Komplexität | ★★★★☆ | **★★☆☆☆** |
+| Bio-Authentizität | ★★★★☆ | **★★★★★** |
 
 ---
 
-## 📋 Druckparameter-Tabelle (Aktualisiert)
+## Druckparameter-Tabelle
 
-| Teil | Material | Layer [mm] | Infill | Wände | Stützen | Zeit ~min |
+| Teil | Material | Layer | Infill | Wände | Stützen | Zeit |
 |---|---|---|---|---|---|---|
-| **body_front** | PETG | 0.20 | 30% | 3 | Ja | 240–300 |
-| **motor_mount_flange** | PETG | 0.20 | 60% | 4 | Ja | 60–90 |
-| **cam_follower (×4)** | PETG | 0.20 | 50% | 3 | Nein | 5 je Teil |
-| **crank_rod (×4)** | PETG/TPU | 0.20 | 50% | 3 | Nein | 10 je Teil |
-| **tail_link_j1** | PETG | 0.20 | 50% | 3 | Ja | 35 |
-| **tail_link_j2** | PETG | 0.20 | 50% | 3 | Ja | 30 |
-| **tail_link_j3** | PETG | 0.20 | 50% | 3 | Ja | 25 |
-| **tail_link_j4** | PETG | 0.20 | 60% | 3 | Ja | 25 |
-| **pectoral_mount_L/R** | PETG | 0.20 | 40% | 4 | Ja | 20 je Teil |
-| **dorsal_fin** | PLA+ | 0.20 | 15% | 3 | Nein | 20 |
+| tail_link_j1 | PETG | 0.20mm | 50% | 3 | Ja | 35 Min |
+| tail_link_j2 | PETG | 0.20mm | 50% | 3 | Ja | 30 Min |
+| **tpu_joint_j3** | **TPU 95A** | **0.25mm** | **25%** | **3** | Nein | **8 Min** |
+| **tpu_joint_j4** | **TPU 85A** | **0.25mm** | **20%** | **2** | Nein | **5 Min** |
+| cam_follower ×2 | PETG | 0.20mm | 50% | 3 | Nein | 5 Min je |
+| crank_rod ×2 | PETG | 0.20mm | 50% | 3 | Nein | 10 Min je |
+| nocken_halter_kurz | PETG | 0.20mm | 60% | 4 | Ja | 45 Min |
 
-**Gesamtdruckzeit: ~15–18 Stunden**
+**Gesamtdruckzeit: ~10–12 Stunden** (kürzer als vorher!)
 
 ---
 
-## 🛠️ Montagereihenfolge (AKTUALISIERT)
+## Montagereihenfolge
 
-1. **Motor-Flansch vorbereiten**
-   - Beide 6001-2RS Lager einpressen (Ø 12 mm Bohrungen)
-   - Nockenwelle einsetzen
-   - Motor mit 4× M2 befestigen
+1. **Kurze Nockenwelle** (60mm, Dreherei ~20 CHF)
+   - 2× 6001-2RS Lager in `nocken_halter_kurz` einpressen
+   - Motor + Getriebe montieren
 
-2. **Gelenk-Flansche vorbereiten** (alle 4)
-   - Kugellagersitze (626-ZZ) seitlich einpressen
-   - Alle Bohrlöcher kontrollieren
+2. **Aktive Gelenke J1 + J2**
+   - 2× Gleitschuh @ 0° und 90° auf Nocke
+   - 2× Zug-Stoß-Stangen an J1 + J2 Flansche anschließen
+   - Test: Bewegen sich J1/J2 gleichmäßig mit 90° Versatz?
 
-3. **Gleitschuhe + Zug-Stoß-Stangen montieren**
-   - 4× cam_follower auf Nocke schieben (90° Versatz)
-   - 4× crank_rod mit M6-Bolzen befestigen
+3. **Passive Gelenke J3 + J4** ← NEU, einfach!
+   - Federstahl-Einlage bei Z=5mm in `tpu_joint_j3` einlegen
+   - `tpu_joint_j3` zwischen Segment 2 + 3 mit Silikonkleber fixieren
+   - 24h aushärten lassen
+   - `tpu_joint_j4` an Schwanzflosse ankleben, 24h aushärten
 
-4. **Gelenk-Kette zusammensetzen (KRITISCH!)**
-   - J1 (L₁=30mm) an body_mid mit M3-Schraube
-   - J2 (L₂=25mm) über Zug-Stoß-Stange verbinden
-   - J3 (L₃=18mm) über Zug-Stoß-Stange verbinden
-   - J4 (L₄=12mm) LETZTE — Schwanzgelenk!
-   - **Wichtig:** Unterschiedliche Hebelarm-Längen beachten!
+4. **Test im Trockenen**
+   - Motor bei 10% Throttle anfahren
+   - J1/J2 sollten aktiv schwingen
+   - J3/J4 von Hand prüfen: leicht biegbar, kehrt selbst zurück?
 
-5. **Test im Trockenen**
-   - Motor langsam anfahren (10% PWM)
-   - Amplituden prüfen: Schwanz SICHTBAR größer als Kopf! ✓
-
-6. **Elektronik + Sensorik**
-   - ESP32 + Sensoren in body_front
-   - O-Ring einlegen, body_lid verschließen
+5. **Wassertest**
+   - Bei 25% Throttle (~1.0 Hz): J3 sollte in Resonanz mitschwingen
+   - Bei 20% Throttle (~0.8 Hz): J4 schwingt stärker (Resonanz J4!)
+   - Schaut es wie ein echter Hai aus? ✓
 
 ---
 
-## 📐 OpenSCAD-Skripte für Gelenk-Flansche
+## Abstimmung im Betrieb
 
-Die 4 Flansche können parametrisch mit OpenSCAD generiert werden:
+Falls J3/J4 zu steif (wenig Bewegung):
+- Infill reduzieren (z.B. 15%)
+- TPU mit niedrigerem Shore-Wert (85A → 75A für J3)
+
+Falls J3/J4 zu weich (schlabbernd):
+- Infill erhöhen
+- Federstahl-Einlage dicker (0.5mm statt 0.3mm)
+- Shore-Wert erhöhen
+
+---
+
+## OpenSCAD-Skizze TPU-Federblock
 
 ```scad
-// tail_link_parametric.scad
-// Erzeugt J1, J2, J3, J4 durch Änderung von 'lever_length'
+// tpu_joint_parametric.scad
+// Für J3: breite=20, tiefe=15, hoehe=10, shore=95
+// Für J4: breite=15, tiefe=12, hoehe=8,  shore=85
 
-lever_length = 30;  // ← Ändere auf 30, 25, 18 oder 12 für J1–J4
-joint_name = "J1";
-
-// Maximale Amplitude (zur Info)
-// theta_max = arcsin(3 / lever_length) [mm]
+breite = 20;
+tiefe  = 15;
+hoehe  = 10;
 
 difference() {
-    // Außenkörper
-    cube([65, 40, 20], center=true);
+    // Grundkörper
+    cube([breite, tiefe, hoehe], center=true);
 
-    // Inneres Loch für Achse
-    cylinder(h=25, r=4, $fn=32, center=true);
+    // Montage-Bohrungen (2× M2)
+    for (x = [-breite/4, breite/4])
+        translate([x, 0, 0])
+            cylinder(h=hoehe+1, r=1.1, $fn=16, center=true);
 
-    // Zug-Stoß-Punkt
-    translate([lever_length/2, 0, 0])
-        cube([8, 8, 25], center=true);
-
-    // Lagersitze (beidseitig)
-    translate([0, -20, 0])
-        cylinder(h=25, r=3, $fn=32, center=true);
-    translate([0, +20, 0])
-        cylinder(h=25, r=3, $fn=32, center=true);
+    // Federstahl-Kanal (bei Z=0, horizontal)
+    translate([0, 0, 0])
+        cube([breite+1, 1.0, 0.5], center=true);
 }
 
-echo(str("Gelenk: ", joint_name, " | Hebel-Länge: ", lever_length, "mm"));
+// Info
+echo(str("TPU-Block: ", breite, "×", tiefe, "×", hoehe, "mm"));
+echo(str("Federstahl-Kanal bei Z=0 (Mitte)"));
 ```
 
-Mit diesem Skript können alle 4 Flansche schnell generiert werden!
+---
+
+## ✅ Konsistenz-Checkliste (Branch: dev/hybrid-passive-tail)
+
+- ✅ `mechanics/hybrid_passive_tail_mechanics.md` — Konzept
+- ✅ `firmware/nocke_kinematik.py` — J1/J2 aktiv, J3/J4 Feder-Simulation
+- ✅ `docs/3d_print_structure.md` — TPU-Blöcke J3+J4 spezifiziert
+- ⏳ OpenSCAD `.scad` Dateien für tpu_joint_j3 + j4
+- ⏳ BOM aktualisieren (Branch-Version)
 
 ---
 
-## ✅ Konsistenz-Checkliste
-
-- ✓ **Firmware** (`nocke_kinematik.py`): Progressive Hebelarm-Längen implementiert
-- ✓ **Amplituden**: Korrekt mit arcsin(e/L), e=3mm
-- ✓ **3D-Druck** (diese Datei): 4 unterschiedliche Gelenk-Flansche spezifiziert
-- ✓ **Montage**: Klare Unterscheidung J1 vs. J2 vs. J3 vs. J4
-- ✓ **Material**: J4 mit 60% Infill für höhere Belastung
-- ✓ **Druckzeit**: Realistisch auf ~15–18 Stunden geschätzt
-- ⏳ **CAD-Dateien** (folgt): OpenSCAD-Generierung, STL-Export
-
----
-
-**Status:** 🟢 Konsistent mit Redesign (Variable Hebelarm-System)
-**Nächster Schritt:** BOM aktualisieren
+**Status:** 🟢 Hybrid-Design dokumentiert

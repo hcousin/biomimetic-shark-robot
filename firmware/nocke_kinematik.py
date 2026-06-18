@@ -1,175 +1,205 @@
 """
 Exzentrische Nockenwelle — Kinematik & Visualisierung
+Hybrid-Design: J1/J2 aktiv (Nockenwelle), J3/J4 passiv (TPU-Federgelenke)
 
-Berechnet die Gelenk-Winkel in Echtzeit basierend auf
-Nocken-Geometrie und variablen Schubstangen-Längen (J1–J4).
+Branch: dev/hybrid-passive-tail
 """
 
 import math
 import numpy as np
 
-# Variable Hebelarm-Längen pro Gelenk (progressive Amplituden)
-LEVER_LENGTHS = {
-    'J1': 30,  # mm — Kopf-nah, kleine Amplitude (±11.3°)
-    'J2': 25,  # mm — Vordermitte         (±13.5°)
-    'J3': 18,  # mm — Hintermitte         (±18.4°)
-    'J4': 12,  # mm — Schwanz, max. Amplitude (±26.6°)
+# ─── Aktive Gelenke (Nockenwelle, e=3mm) ────────────────────
+ACTIVE_LEVERS = {
+    'J1': 30,  # mm → arcsin(3/30) ≈ ±5.7°
+    'J2': 25,  # mm → arcsin(3/25) ≈ ±6.9°
 }
 
+# ─── Passive Gelenke (TPU-Federblöcke) ──────────────────────
+# Steifigkeit k [N·mm/°], Dämpfung d, Trägheit m [kg·mm²]
+PASSIVE_JOINTS = {
+    'J3': {'k': 39.5, 'd': 4.0, 'm': 1.0, 'shore': '95A'},
+    'J4': {'k': 25.3, 'd': 2.5, 'm': 1.0, 'shore': '85A'},
+}
+
+
 class NockeKinematics:
-    def __init__(self, R0=8, e=3, lever_lengths=None):
+    def __init__(self, R0=8, e=3, active_levers=None, passive_joints=None):
         """
-        R0:            Mittlerer Radius Nocke (mm)
-        e:             Exzentrizität (mm)
-        lever_lengths: Dict mit Hebellängen pro Gelenk (mm)
-                       Standard: LEVER_LENGTHS (progressive)
+        R0:             Mittlerer Radius Nocke (mm)
+        e:              Exzentrizität (mm) — kurze Welle, nur J1+J2
+        active_levers:  Dict Hebellängen aktive Gelenke
+        passive_joints: Dict Federparameter passive Gelenke
         """
         self.R0 = R0
-        self.e = e
-        self.levers = lever_lengths if lever_lengths is not None else LEVER_LENGTHS.copy()
+        self.e  = e
+        self.active  = active_levers  if active_levers  is not None else ACTIVE_LEVERS.copy()
+        self.passive = passive_joints if passive_joints is not None else PASSIVE_JOINTS.copy()
 
-    def nocke_radius(self, theta_deg):
-        """R(θ) = R₀ + e·cos(θ) — Polarradius der Nocke"""
-        theta = math.radians(theta_deg)
-        return self.R0 + self.e * math.cos(theta)
+        # Zustand der passiven Gelenke (für Simulation)
+        self._passive_state = {k: {'theta': 0.0, 'omega': 0.0} for k in self.passive}
 
-    def gleitschuh_hub(self, theta_deg):
+    # ── Nocken-Grundfunktionen ───────────────────────────────
+    def gleitschuh_hub(self, theta_nocke_deg, gleitschuh_pos_deg):
+        """Linearer Hub des Gleitschuhs: h = e·cos(θ_nocke - θ_pos)"""
+        theta_eff = math.radians(theta_nocke_deg - gleitschuh_pos_deg)
+        return self.e * math.cos(theta_eff)
+
+    def aktiv_winkel(self, hub_mm, joint_key):
+        """θ = arcsin(h / L) für aktive Gelenke"""
+        L = self.active[joint_key]
+        hub_clamped = max(-L + 0.001, min(L - 0.001, hub_mm))
+        return math.degrees(math.asin(hub_clamped / L))
+
+    # ── Aktive Gelenke ───────────────────────────────────────
+    def aktive_gelenke(self, theta_nocke_deg):
+        """Berechnet J1 und J2 aus Nocken-Position."""
+        h1 = self.gleitschuh_hub(theta_nocke_deg,  0)
+        h2 = self.gleitschuh_hub(theta_nocke_deg, 90)
+        j1 = self.aktiv_winkel(h1, 'J1')
+        j2 = self.aktiv_winkel(h2, 'J2')
+        return j1, j2
+
+    # ── Passive Gelenke (Feder-Dämpfer-Simulation) ───────────
+    def passive_step(self, j2_winkel, dt_s):
         """
-        Linearer Hub des Gleitschuhs an Schubstangen-Halter.
+        Simuliert die passiven TPU-Gelenke J3 + J4.
 
-        Geometrie: Nocke rotiert um Achse. Gleitschuh sitzt auf
-        radialer Linie und kann linear bewegt werden.
+        J3 wird durch J2 angetrieben (Trägheit + Feder):
+          m·θ̈ + d·θ̇ + k·(θ - θ_input) = 0
 
-        Hub = R(θ) - R₀ = e·cos(θ)  [in mm, bezogen auf Mittellage]
-        """
-        return self.e * math.cos(math.radians(theta_deg))
-
-    def gelenk_winkel(self, linear_hub_mm, joint_key):
-        """
-        Wandelt linearen Hub in Gelenk-Winkel um.
-
-        Crank-Slider-Mechanismus:
-        θ_joint [deg] = arcsin(hub / L)
+        J4 wird durch J3 angetrieben (gleiche Logik).
 
         Args:
-            linear_hub_mm: Linearer Hub vom Gleitschuh (mm)
-            joint_key:     'J1', 'J2', 'J3' oder 'J4'
-        """
-        L = self.levers[joint_key]
-        if abs(linear_hub_mm) >= L:
-            return math.copysign(90.0, linear_hub_mm)
-        return math.degrees(math.asin(linear_hub_mm / L))
-
-    def schwimmzyklus(self, theta_nocke_deg, gleitschuh_position, joint_key):
-        """
-        Berechnet Gelenk-Winkel für gegebene Nocken-Position,
-        Gleitschuh-Position und Gelenk-Schlüssel.
-
-        Args:
-            theta_nocke_deg:    Aktuelle Rotation Nockenwelle (0–360°)
-            gleitschuh_position: 0, 90, 180 oder 270 Grad
-            joint_key:          'J1', 'J2', 'J3' oder 'J4'
+            j2_winkel: Aktueller Winkel J2 [°] — treibt J3 an
+            dt_s:      Zeitschritt [s]
 
         Returns:
-            theta_joint: Gelenk-Auslenkung in Grad (±)
+            (j3, j4) Winkel in Grad
         """
-        theta_eff = theta_nocke_deg - gleitschuh_position
-        hub = self.gleitschuh_hub(theta_eff)
-        return self.gelenk_winkel(hub, joint_key)
+        # J3: angetrieben durch J2
+        s3 = self._passive_state['J3']
+        p3 = self.passive['J3']
+        torque3 = p3['k'] * (j2_winkel - s3['theta']) - p3['d'] * s3['omega']
+        alpha3 = torque3 / p3['m']
+        s3['omega'] += alpha3 * dt_s
+        s3['theta'] += s3['omega'] * dt_s
 
-    def vier_gelenke(self, theta_nocke_deg):
-        """Berechnet alle 4 Gelenk-Winkel für gegebene Nocken-Position."""
-        j1 = self.schwimmzyklus(theta_nocke_deg,   0, 'J1')
-        j2 = self.schwimmzyklus(theta_nocke_deg,  90, 'J2')
-        j3 = self.schwimmzyklus(theta_nocke_deg, 180, 'J3')
-        j4 = self.schwimmzyklus(theta_nocke_deg, 270, 'J4')
-        return j1, j2, j3, j4
+        # J4: angetrieben durch J3
+        s4 = self._passive_state['J4']
+        p4 = self.passive['J4']
+        torque4 = p4['k'] * (s3['theta'] - s4['theta']) - p4['d'] * s4['omega']
+        alpha4 = torque4 / p4['m']
+        s4['omega'] += alpha4 * dt_s
+        s4['theta'] += s4['omega'] * dt_s
 
-    def amplitude_maximal(self, joint_key):
-        """Maximum mögliche Amplitude für ein bestimmtes Gelenk."""
-        return self.gelenk_winkel(self.e, joint_key)
+        return s3['theta'], s4['theta']
 
-    def print_zyklus(self, steps=9):
-        """Tabelle eines kompletten Zyklus."""
-        amps = {k: self.amplitude_maximal(k) for k in self.levers}
-        print("╔════════════════════════════════════════════════════════════════════╗")
-        print("║ NOCKENWELLE KINEMATIK — VARIABLE HEBELARME                       ║")
-        print("║ R₀={}mm, e={}mm".format(self.R0, self.e).ljust(69) + "║")
-        print("║ L₁={L1}mm(J1) | L₂={L2}mm(J2) | L₃={L3}mm(J3) | L₄={L4}mm(J4)".format(
-            L1=self.levers['J1'], L2=self.levers['J2'],
-            L3=self.levers['J3'], L4=self.levers['J4']).ljust(69) + "║")
-        print("║ Amp: J1=±{a1:.1f}° | J2=±{a2:.1f}° | J3=±{a3:.1f}° | J4=±{a4:.1f}°".format(
-            a1=amps['J1'], a2=amps['J2'], a3=amps['J3'], a4=amps['J4']).ljust(69) + "║")
-        print("╚════════════════════════════════════════════════════════════════════╝")
-        print()
-        print(" θ_Nocke  │    J1(L=30)  │    J2(L=25)  │    J3(L=18)  │    J4(L=12)  ")
-        print("──────────┼──────────────┼──────────────┼──────────────┼──────────────")
+    def reset_passive(self):
+        """Setzt Zustand der passiven Gelenke zurück."""
+        for k in self._passive_state:
+            self._passive_state[k] = {'theta': 0.0, 'omega': 0.0}
 
-        for step in range(steps + 1):
-            theta = (step / steps) * 360
-            j1, j2, j3, j4 = self.vier_gelenke(theta)
-            print(f"  {theta:6.1f}°  │   {j1:+7.2f}°   │   {j2:+7.2f}°   │   {j3:+7.2f}°   │   {j4:+7.2f}°")
+    # ── Vollständiger Zyklus ─────────────────────────────────
+    def simulate(self, freq_hz=1.0, duration_s=3.0, dt_s=0.005):
+        """
+        Simuliert den kompletten Roboter über mehrere Zyklen.
 
-        print()
-        print("BEOBACHTUNG: Progressive Amplituden J1 < J2 < J3 < J4")
-        print("→ Kontinuierliche Körperwelle mit wachsender Amplitude Richtung Schwanz!")
-        print()
+        Args:
+            freq_hz:    Schwimmfrequenz [Hz]
+            duration_s: Simulationsdauer [s]
+            dt_s:       Zeitschritt [s]
 
-    def phasenverlauf(self):
-        """Berechne Phasenverlauf für alle Gelenke."""
-        angles = np.linspace(0, 360, 361)
+        Returns:
+            Dict mit Zeitreihen für J1–J4
+        """
+        self.reset_passive()
+        t_vals  = np.arange(0, duration_s, dt_s)
         j1_vals, j2_vals, j3_vals, j4_vals = [], [], [], []
 
-        for theta in angles:
-            j1, j2, j3, j4 = self.vier_gelenke(theta)
+        for t in t_vals:
+            theta_nocke = (t * freq_hz * 360) % 360
+            j1, j2 = self.aktive_gelenke(theta_nocke)
+            j3, j4 = self.passive_step(j2, dt_s)
             j1_vals.append(j1)
             j2_vals.append(j2)
             j3_vals.append(j3)
             j4_vals.append(j4)
 
-        return angles, j1_vals, j2_vals, j3_vals, j4_vals
+        return {
+            't':  t_vals,
+            'J1': np.array(j1_vals),
+            'J2': np.array(j2_vals),
+            'J3': np.array(j3_vals),
+            'J4': np.array(j4_vals),
+        }
+
+    # ── Ausgaben ────────────────────────────────────────────
+    def amplitude_aktiv(self, joint_key):
+        """Max. Amplitude aktives Gelenk."""
+        L = self.active[joint_key]
+        return math.degrees(math.asin(self.e / L))
+
+    def resonanzfrequenz(self, joint_key):
+        """Resonanzfrequenz des passiven Gelenks [Hz]."""
+        p = self.passive[joint_key]
+        return (1 / (2 * math.pi)) * math.sqrt(p['k'] / p['m'])
+
+    def print_info(self):
+        print("╔══════════════════════════════════════════════════════════════╗")
+        print("║  HYBRID-DESIGN: Aktive Nockenwelle + Passive TPU-Gelenke   ║")
+        print("║  R₀={}mm, e={}mm (kurze Welle, nur J1+J2)".format(self.R0, self.e).ljust(63) + "║")
+        print("╠══════════════════════════════════════════════════════════════╣")
+        print("║  AKTIVE GELENKE (Nockenwelle)                               ║")
+        for key, L in self.active.items():
+            amp = self.amplitude_aktiv(key)
+            print(f"║    {key} (L={L}mm) → ±{amp:.1f}°".ljust(63) + "║")
+        print("╠══════════════════════════════════════════════════════════════╣")
+        print("║  PASSIVE GELENKE (TPU-Feder)                                ║")
+        for key, p in self.passive.items():
+            f_res = self.resonanzfrequenz(key)
+            print(f"║    {key} (Shore {p['shore']}, k={p['k']}) → f_res={f_res:.2f} Hz".ljust(63) + "║")
+        print("╚══════════════════════════════════════════════════════════════╝\n")
+
+    def print_zyklus(self, freq_hz=1.0, steps=8):
+        """Tabelle eines kompletten Zyklus bei gegebener Frequenz."""
+        self.reset_passive()
+        dt = 1.0 / (freq_hz * steps * 10)  # fein auflösen, dann samplen
+        result = self.simulate(freq_hz=freq_hz, duration_s=2.0/freq_hz, dt_s=dt)
+
+        # Sample an steps+1 gleichmäßigen Punkten im letzten Zyklus
+        n = len(result['t'])
+        cycle_start = n // 2  # zweite Hälfte (eingeschwungen)
+        indices = [cycle_start + int(i * (n - 1 - cycle_start) / steps) for i in range(steps + 1)]
+
+        print(f" θ_Nocke  │   J1(aktiv) │   J2(aktiv) │  J3(passiv) │  J4(passiv)")
+        print("──────────┼─────────────┼─────────────┼─────────────┼─────────────")
+        for idx in indices:
+            theta = (result['t'][idx] * freq_hz * 360) % 360
+            print(f"  {theta:5.1f}°  │  {result['J1'][idx]:+7.2f}°  │  {result['J2'][idx]:+7.2f}°  │  {result['J3'][idx]:+7.2f}°  │  {result['J4'][idx]:+7.2f}°")
+        print()
 
 
-# ─── Beispiel: Standard-Hai-Roboter ─────────────────────────────────────────
+# ─── Hauptprogramm ───────────────────────────────────────────
 if __name__ == "__main__":
-    k = NockeKinematics(R0=8, e=3)  # lever_lengths = LEVER_LENGTHS (Standard)
+    k = NockeKinematics()
+    k.print_info()
 
-    print("\n=== HAIFISCH-ROBOTER NOCKENWELLE — VARIABLE HEBELARME ===\n")
-    k.print_zyklus(steps=12)
+    print("=== Zyklus bei 1.0 Hz ===")
+    k.print_zyklus(freq_hz=1.0)
 
-    # Detaillierte Analyse
-    print("\n[Detailanalyse bei θ_Nocke = 90°]")
-    theta_test = 90
-    j1, j2, j3, j4 = k.vier_gelenke(theta_test)
-    print(f"  J1 = {j1:+.2f}°  (Peduncle,   L={k.levers['J1']}mm)")
-    print(f"  J2 = {j2:+.2f}°  (Mid-body,   L={k.levers['J2']}mm)")
-    print(f"  J3 = {j3:+.2f}°  (Caudal-base,L={k.levers['J3']}mm)")
-    print(f"  J4 = {j4:+.2f}°  (Tail-tip,   L={k.levers['J4']}mm)")
+    print("=== Zyklus bei 1.5 Hz ===")
+    k.print_zyklus(freq_hz=1.5)
+
+    # Resonanzcheck
+    print("[Resonanz-Abstimmung]")
+    for key in PASSIVE_JOINTS:
+        f_res = k.resonanzfrequenz(key)
+        print(f"  {key}: f_resonanz = {f_res:.2f} Hz → optimal bei {f_res:.1f} Hz schwimmen")
     print()
 
-    # Amplituden-Übersicht
-    print("[Maximale Amplituden pro Gelenk]")
-    for key in ['J1', 'J2', 'J3', 'J4']:
-        amp = k.amplitude_maximal(key)
-        L = k.levers[key]
-        print(f"  {key} (L={L:2d}mm) → ±{amp:.1f}°")
-    print()
-
-    # Frequenz-Mapping
-    print("[RPM → Schwimmfrequenz]")
-    for rpm in [50, 100, 150, 250]:
-        f_hz = rpm / 60
-        print(f"  {rpm:3d} RPM → {f_hz:.2f} Hz → {f_hz * 0.6:.2f} m/s (geschätzt)")
-    print()
-
-    # Vergleich: Einheitliche vs. variable Hebelarme
-    print("\n[Vergleich: Einheitliche (L=25mm) vs. Variable Hebelarme]")
-    k_uniform = NockeKinematics(R0=8, e=3,
-                                lever_lengths={'J1': 25, 'J2': 25, 'J3': 25, 'J4': 25})
-    print(f"  {'Gelenk':<6} {'Einheitlich (L=25mm)':>22} {'Variable Hebelarme':>22}")
-    print(f"  {'------':<6} {'--------------------':>22} {'------------------':>22}")
-    for key in ['J1', 'J2', 'J3', 'J4']:
-        a_uni = k_uniform.amplitude_maximal(key)
-        a_var = k.amplitude_maximal(key)
-        print(f"  {key:<6}  ±{a_uni:>5.1f}°{' ':>14}  ±{a_var:>5.1f}°")
-    print()
+    print("[RPM → Schwimmfrequenz (Getriebe 40:1)]")
+    for pct in [10, 25, 50, 75]:
+        rpm_motor = pct / 100 * 9990
+        rpm_nocke = rpm_motor / 40
+        f_hz = rpm_nocke / 60
+        print(f"  {pct:3d}% Throttle → {f_hz:.2f} Hz")

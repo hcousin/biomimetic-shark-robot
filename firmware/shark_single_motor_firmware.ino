@@ -1,39 +1,51 @@
 /*
  * ============================================================
- *  BIOMIMETISCHER HAIFISCH — SINGLE MOTOR VERSION
- *  Exzentrische Nockenwelle + BL Motor (ESC)
+ *  BIOMIMETISCHER HAIFISCH — HYBRID PASSIVE TAIL VERSION
+ *  Exzentrische Nockenwelle + BL Motor (ESC) + Passive TPU Gelenke
  * ============================================================
  *
- *  Hardware:
+ *  Hardware (aus mechanics/hybrid_passive_tail_mechanics.md):
  *    - ESP32 DevKit
  *    - Brushless Outrunner Motor (KV=900)
  *    - ESC 20A mit PWM-Input
- *    - Exzentrische Nockenwelle (Standard: e=3mm)
- *    - 4 Gelenk-Flansche mit VARIABLEN Hebelarmen:
- *        J1 (L=30mm) → ±5.7°   Kopf-nah
- *        J2 (L=25mm) → ±6.9°   Vordermitte
- *        J3 (L=18mm) → ±9.6°   Hintermitte
- *        J4 (L=12mm) → ±14.5°  Schwanz (maximal!)
- *      Amplitude = arcsin(e / L)
- *    - 2× MG90S Brustflossen-Servo
- *    - 1× MG996R Ballast-Servo
+ *    - Exzentrische Nockenwelle: O12mm x 60mm, e=3mm (KURZ!)
+ *    - 2 AKTIVE Gelenk-Flansche (Nockenwelle):
+ *        J1: L=30mm -> +-5.7 deg (arcsin(3/30))
+ *        J2: L=25mm -> +-6.9 deg (arcsin(3/25))
+ *        Gleitschuhe: 2 Stueck @ 0 deg und 90 deg
+ *    - 2 PASSIVE TPU-Federgelenke (KEINE Nockenwelle!):
+ *        J3: TPU 95A, 20x15x10mm -> Resonanz @ 1.0 Hz, Amp: +-8-12 deg
+ *        J4: TPU 85A, 15x12x8mm  -> Resonanz @ 0.8 Hz, Amp: +-12-18 deg
+ *      Passive Bewegung durch: Traegheit + Hydrodynamik + TPU-Rueckstellkraft
+ *    - 2x MG90S Brustflossen-Servo
+ *    - 1x MG996R Ballast-Servo
  *    - MS5837-30BA Drucksensor
  *    - MPU-6050 IMU
  *
  *  Elektronik:
- *    GPIO 25 → ESC PWM Input (50 Hz, 1000–2000 µs)
- *    I²C 21/22 → Sensoren (MS5837, MPU6050)
- *    SDA/SCL → PCA9685 (optional für weitere Servos)
+ *    GPIO 25 -> ESC PWM Input (50 Hz, 1000-2000 us)
+ *    I2C 21/22 -> Sensoren (MS5837, MPU6050)
+ *    SDA/SCL -> PCA9685 (optional fuer weitere Servos)
  *
- *  WICHTIG: Die 4 Gelenke werden REIN MECHANISCH durch
- *  die Nockenwelle angesteuert. Der Code regelt nur:
+ *  WICHTIG: Nur J1+J2 werden von der Nockenwelle angesteuert!
+ *  J3+J4 sind PASSIV und schwingen durch:
+ *    - Traegheit des Schwanzsegments bei Richtungsumkehr
+ *    - Hydrodynamische Kraefte (Wasser drueckt Flosse)
+ *    - Rueckstellkraft des TPU (Federwirkung)
+ *  
+ *  Der Code regelt nur:
  *    - Motor-Drehzahl (via ESC PWM)
  *    - Brustflossen-Pitch (IMU-Feedback)
  *    - Tiefe (Ballast-PID)
  *
- *  Die progressiven Amplituden (J1 < J2 < J3 < J4) entstehen
- *  automatisch durch die unterschiedlichen Hebellängen —
- *  keine Software-CPG nötig!
+ *  Die progressive Koerperwelle entsteht durch:
+ *    - Mechanische Ansteuerung J1+J2 (Nockenwelle)
+ *    - Passives Nachschwingen J3+J4 (TPU-Federn)
+ *  -> Biologisch authentisch wie echter Hai!
+ *
+ *  Getriebe: 40:1 (10:1 Planetengetriebe x 4:1 Schneckengetriebe)
+ *  Fur Kinematik-Simulation: siehe firmware/nocke_kinematik.py
+ *  Branch: dev/hybrid-passive-tail
  * ============================================================
  */
 
@@ -41,55 +53,47 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-// ─── Sensor-Adressen ────────────────────────────────────────
+// --- Sensor-Adressen ---
 #define MPU6050_ADDR   0x68
 #define MS5837_ADDR    0x76
 
-// ─── ESC PWM Output ─────────────────────────────────────────
-#define ESC_PIN        25      // PWM für ESC
-#define PWM_FREQ       50      // 50 Hz Standard für ESC
-#define PWM_RESOLUTION 16      // 16-bit resolution = 0–65535
+// --- ESC PWM Output ---
+#define ESC_PIN        25
+#define PWM_FREQ       50
+#define PWM_RESOLUTION 16
 #define PWM_CHANNEL    0
 
-// PWM-Pulsbreite Grenzen (in µs):
-//   1000 µs = 0% Throttle (Stop)
-//   1500 µs = Neutral (für bidirektionale ESCs)
-//   2000 µs = 100% Throttle (Vollgas)
-//
-// ESP32 PWM-Berechnung:
-//   duty_cycle = (desired_µs / 20000) × 65535
-//   z.B. 1500 µs: (1500 / 20000) × 65535 = 4915
-#define ESC_MIN_PWM    3276    // 1000 µs
-#define ESC_MID_PWM    4915    // 1500 µs (neutral, manche ESCs)
-#define ESC_MAX_PWM    6553    // 2000 µs
+#define ESC_MIN_PWM    3276
+#define ESC_MID_PWM    4915
+#define ESC_MAX_PWM    6553
 
-// ─── Nockenwellen-Kinematik (Variable Hebelarme) ────────────
-// Hebelarm-Längen pro Gelenk [mm]:
-//   L1=30, L2=25, L3=18, L4=12
-// Exzentrizität der Nockenwelle: e=3mm
-// Amplitude[i] = arcsin(e / L[i])
-//   J1: arcsin(3/30) ≈ ±5.7°  (Kopf-nah, kleine Auslenkung)
-//   J2: arcsin(3/25) ≈ ±6.9°
-//   J3: arcsin(3/18) ≈ ±9.6°
-//   J4: arcsin(3/12) ≈ ±14.5° (Schwanz, maximale Auslenkung!)
-// Phasenversätze (mechanisch durch Gleitschuh-Position):
-//   J1 @ 0°, J2 @ 90°, J3 @ 180°, J4 @ 270°
-// → Kontinuierliche Körperwelle entsteht REIN MECHANISCH.
-// Für Simulation: siehe firmware/nocke_kinematik.py
+// --- Nockenwellen-Kinematik (Hybrid-Design: 2 aktiv + 2 passiv) ---
+// KURZE Nockenwelle: O12mm x 60mm (nicht 120mm!), e=3mm Exzentrizitaet
+// NUR 2 Gleitschuhe @ 0 deg und 90 deg (nicht 4!)
+// AKTIVE Gelenke (Nockenwelle):
+//   J1: Hebel L1=30mm -> arcsin(3/30) = +-5.7 deg (Kopf-nah)
+//   J2: Hebel L2=25mm -> arcsin(3/25) = +-6.9 deg (Vordermitte)
+//   Phasenversatz: J1 @ 0 deg, J2 @ 90 deg (mechanisch)
+// PASSIVE Gelenke (TPU-Federblocke, KEINE Nockenwelle!):
+//   J3: TPU 95A, 20x15x10mm -> Resonanz @ 1.0 Hz, Amp: +-8-12 deg
+//   J4: TPU 85A, 15x12x8mm  -> Resonanz @ 0.8 Hz, Amp: +-12-18 deg
+//   Bewegung durch: Traegheit + Hydrodynamik + TPU-Feder
+// Getriebe: 40:1 (10:1 Planetengetriebe x 4:1 Schneckengetriebe)
+// Nockenwellen-RPM = Motor-RPM / 40
+// Schwimmfrequenz = Nockenwellen-RPM / 60
+// Fur Simulation: siehe firmware/nocke_kinematik.py
 
-// ─── Motorsteuerung Parameter ───────────────────────────────
+// --- Motorsteuerung Parameter ---
 struct MotorControl {
-  float throttle      = 0.0f;    // 0.0 – 1.0 (0–100%)
-  float throttle_set  = 0.0f;    // Sollwert
-  float ramp_rate     = 0.1f;    // Sanfter Anfahrt (pro Schleife)
+  float throttle      = 0.0f;
+  float throttle_set  = 0.0f;
+  float ramp_rate     = 0.1f;
   uint16_t pwm_out    = ESC_MIN_PWM;
-  
-  // RPM-Feedback (optional mit Encoder)
   float rpm           = 0.0f;
-  float freq_swim     = 0.0f;    // Berechnete Schwimmfrequenz [Hz]
+  float freq_swim     = 0.0f;
 } motor;
 
-// ─── Tiefenregler & Ballast ─────────────────────────────────
+// --- Tiefenregler & Ballast ---
 struct PIDState {
   float kp          = 1.4f;
   float ki          = 0.25f;
@@ -102,45 +106,45 @@ struct PIDState {
 
 uint8_t ballastPos  = 90;
 
-// ─── Sensorwerte ────────────────────────────────────────────
+// --- Sensorwerte ---
 float depthM        = 0.0f;
 float pitchDeg      = 0.0f;
 float rollDeg       = 0.0f;
 float tempC         = 20.0f;
 
-// ─── MS5837 PROM ────────────────────────────────────────────
+// --- MS5837 PROM ---
 uint16_t ms5837_C[7] = {0};
 
-// ─── Brustflossen-Pitch-Korrektur ───────────────────────────
+// --- Brustflossen-Pitch-Korrektur ---
 struct PectoralControl {
   float pitch_left   = 0.0f;
   float pitch_right  = 0.0f;
-  float imr_damp     = 0.3f;    // IMU Rückkopplung Faktor
-  float dive_offset  = 0.0f;    // Tauchen-Offset
+  float imr_damp     = 0.3f;
+  float dive_offset  = 0.0f;
 } pectoral;
 
-// ─── Zeitsteuerung ──────────────────────────────────────────
+// --- Zeitsteuerung ---
 unsigned long lastSensor  = 0;
 unsigned long lastPID     = 0;
 unsigned long lastTelem   = 0;
-const uint32_t SENSOR_DT_MS = 50;   // 20 Hz
-const uint32_t PID_DT_MS    = 50;   // 20 Hz
-const uint32_t TELEM_DT_MS  = 500;  // 2 Hz Telemetrie
+const uint32_t SENSOR_DT_MS = 50;
+const uint32_t PID_DT_MS    = 50;
+const uint32_t TELEM_DT_MS  = 500;
 
 bool emergencyStop = false;
 
-// ─── WiFi UDP ───────────────────────────────────────────────
+// --- WiFi UDP ---
 const char* WIFI_SSID  = "SharkControl";
 const char* WIFI_PASS  = "haifisch2024";
 WiFiUDP udp;
 char udpBuf[256];
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  MPU-6050
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void mpu_init() {
   Wire.beginTransmission(MPU6050_ADDR);
-  Wire.write(0x6B); Wire.write(0x00);   // Wake up
+  Wire.write(0x6B); Wire.write(0x00);
   Wire.endTransmission();
 }
 
@@ -151,19 +155,17 @@ void mpu_read() {
   int16_t ax = (Wire.read()<<8)|Wire.read();
   int16_t ay = (Wire.read()<<8)|Wire.read();
   int16_t az = (Wire.read()<<8)|Wire.read();
-  
   pitchDeg = atan2f((float)ay, (float)az) * 57.296f;
   rollDeg  = atan2f((float)ax, (float)az) * 57.296f;
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  MS5837-30BA Drucksensor
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void ms5837_init() {
   Wire.beginTransmission(MS5837_ADDR);
   Wire.write(0x1E); Wire.endTransmission();
   delay(10);
-  
   for (uint8_t i = 1; i <= 6; i++) {
     Wire.beginTransmission(MS5837_ADDR);
     Wire.write(0xA0 + i * 2);
@@ -186,7 +188,6 @@ uint32_t ms5837_readADC(uint8_t cmd) {
 void ms5837_read() {
   uint32_t D1 = ms5837_readADC(0x40);
   uint32_t D2 = ms5837_readADC(0x50);
-  
   int32_t dT   = (int32_t)D2 - ((int32_t)ms5837_C[5] << 8);
   tempC        = 20.0f + dT * ms5837_C[6] / 8388608.0f;
   int64_t OFF  = ((int64_t)ms5837_C[2] << 16) + ((int64_t)ms5837_C[4] * dT >> 7);
@@ -196,46 +197,33 @@ void ms5837_read() {
   depthM = max(depthM, 0.0f);
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  Motor ESC PWM Control
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void motor_init() {
   ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
   ledcAttachPin(ESC_PIN, PWM_CHANNEL);
-  ledcWrite(PWM_CHANNEL, ESC_MIN_PWM);  // Start at 0%
+  ledcWrite(PWM_CHANNEL, ESC_MIN_PWM);
   delay(500);
 }
 
 void motor_update(float dt_s) {
-  // Sanfte Beschleunigung (Ramping)
   float diff = motor.throttle_set - motor.throttle;
   if (abs(diff) > 0.01f) {
     motor.throttle += constrain(diff, -motor.ramp_rate * dt_s, motor.ramp_rate * dt_s);
   } else {
     motor.throttle = motor.throttle_set;
   }
-  
-  // Throttle [0,1] → PWM Duty
-  // Linear Mapping: 0% → ESC_MIN_PWM, 100% → ESC_MAX_PWM
   motor.pwm_out = (uint16_t)(ESC_MIN_PWM + motor.throttle * (ESC_MAX_PWM - ESC_MIN_PWM));
-  
-  // Berechne geschätzte Schwimmfrequenz
-  // Motor RPM = throttle × max_rpm = throttle × 9990
-  // Getriebe 40:1 (10:1 Planetengetriebe × 4:1 Schneckengetriebe)
-  // → Nockenwellen-RPM = Motor_RPM / 40
-  // Schwimmfrequenz = Nockenwellen-RPM / 60
-  // Variable Hebelarme ändern NUR die Amplitude, NICHT die Frequenz!
   float motor_rpm = motor.throttle * 9990.0f;
   float nocke_rpm = motor_rpm / 40.0f;
   motor.freq_swim = nocke_rpm / 60.0f;
-  
-  // PWM Ausgabe
   ledcWrite(PWM_CHANNEL, motor.pwm_out);
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  PID Tiefenregler
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void runDepthPID(float dt_s) {
   float error = depthPID.setpoint - depthM;
   depthPID.integral  += error * dt_s;
@@ -245,48 +233,37 @@ void runDepthPID(float dt_s) {
   depthPID.output     = depthPID.kp * error
                       + depthPID.ki * depthPID.integral
                       + depthPID.kd * derivative;
-  
   ballastPos = (int)constrain(90.0f + depthPID.output * 8.0f, 70.0f, 110.0f);
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  Brustflossen-Steuerung (IMU-Feedback)
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void updatePectoralFins() {
-  // Pitch-Korrektur: Wenn Hai zu steil (Pitch > 10°), Brustflossen korrigieren
   float pitch_corr = pitchDeg * pectoral.imr_damp;
-  
   pectoral.pitch_left  = -pitch_corr + pectoral.dive_offset;
   pectoral.pitch_right = -pitch_corr + pectoral.dive_offset;
-  
-  // Grenzen
   pectoral.pitch_left  = constrain(pectoral.pitch_left, -25.0f, 25.0f);
   pectoral.pitch_right = constrain(pectoral.pitch_right, -25.0f, 25.0f);
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  UDP Kommando-Parser
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void parseUDP() {
   int len = udp.parsePacket();
   if (!len) return;
-  
   udp.read((uint8_t*)udpBuf, sizeof(udpBuf)-1);
   udpBuf[len] = 0;
-  
-  // Einfacher Text-Parser
-  // Format: "THROTTLE 0.5"  oder "DEPTH 1.0"  oder "STOP"
-  
   String s(udpBuf);
   s.toUpperCase();
-  
   if (s.startsWith("THROTTLE ")) {
     motor.throttle_set = constrain(s.substring(9).toFloat(), 0.0f, 1.0f);
     Serial.print("Throttle set to: "); Serial.println(motor.throttle_set);
   }
   else if (s.startsWith("DEPTH ")) {
     depthPID.setpoint = constrain(s.substring(6).toFloat(), 0.0f, 10.0f);
-    pectoral.dive_offset = -15.0f;  // Brustflossen für Tauchen
+    pectoral.dive_offset = -15.0f;
     Serial.print("Target depth: "); Serial.println(depthPID.setpoint);
   }
   else if (s == "SURFACE") {
@@ -304,8 +281,6 @@ void parseUDP() {
     emergencyStop = false;
     Serial.println("Resume");
   }
-  
-  // Telemetrie-Rückmeldung
   char reply[128];
   snprintf(reply, sizeof(reply),
     "DEPTH:%.2f,PITCH:%.1f,MOTOR:%.1f%%,FREQ:%.2fHz",
@@ -315,24 +290,22 @@ void parseUDP() {
   udp.endPacket();
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  Serial Debug Interface
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void parseSerial() {
   if (!Serial.available()) return;
   String s = Serial.readStringUntil('\n');
   s.trim();
-  
   if (s == "status") {
-    Serial.printf("DEPTH: %.2f m | PITCH: %.1f° | TEMP: %.1f°C\n", depthM, pitchDeg, tempC);
+    Serial.printf("DEPTH: %.2f m | PITCH: %.1f deg | TEMP: %.1f C\n", depthM, pitchDeg, tempC);
     Serial.printf("MOTOR: %.0f%% Throttle | Freq: %.2f Hz | RPM: %.0f\n",
                   motor.throttle*100.0f, motor.freq_swim, motor.throttle * 9990.0f);
-    Serial.printf("Ballast: %d | Pect-L: %.1f° | Pect-R: %.1f°\n",
+    Serial.printf("Ballast: %d | Pect-L: %.1f deg | Pect-R: %.1f deg\n",
                   ballastPos, pectoral.pitch_left, pectoral.pitch_right);
-    // Gelenk-Amplituden Info (rein mechanisch, nur zur Info)
-    Serial.println("Gelenk-Amplituden (mechanisch, variable Hebelarme):");
-    Serial.println("  J1 (L=30mm): ±5.7°  | J2 (L=25mm): ±6.9°");
-    Serial.println("  J3 (L=18mm): ±9.6°  | J4 (L=12mm): ±14.5°");
+    Serial.println("Gelenk-Amplituden (Hybrid-Design: 2 aktiv + 2 passiv):");
+    Serial.println("  AKTIV (Nockenwelle): J1 (L=30mm): +-5.7 deg | J2 (L=25mm): +-6.9 deg");
+    Serial.println("  PASSIV (TPU-Feder): J3 (95A): +-8-12 deg | J4 (85A): +-12-18 deg");
   }
   else if (s.startsWith("throttle ")) {
     motor.throttle_set = constrain(s.substring(9).toFloat(), 0.0f, 1.0f);
@@ -348,77 +321,58 @@ void parseSerial() {
   }
 }
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  SETUP
-// ════════════════════════════════════════════════════════════
+// ============================================================
 void setup() {
   Serial.begin(115200);
   Wire.begin(21, 22);
   Wire.setClock(400000);
-  
-  Serial.println("\n╔═══════════════════════════════════════════╗");
-  Serial.println("║  HAIFISCH-ROBOTER — SINGLE MOTOR v1.1   ║");
-  Serial.println("║  Variable Hebelarme J1=30/J2=25/         ║");
-  Serial.println("║  J3=18/J4=12mm | Nockenwelle e=3mm      ║");
-  Serial.println("╚═══════════════════════════════════════════╝\n");
-  
+  Serial.println("\n+--------------------------------------------------------------+");
+  Serial.println("|  HAIFISCH-ROBOTER -- HYBRID PASSIVE TAIL v1.2             |");
+  Serial.println("|  Branch: dev/hybrid-passive-tail                         |");
+  Serial.println("|  2x AKTIV (J1/J2) + 2x PASSIV (J3/J4)                    |");
+  Serial.println("|  Nockenwelle: 60mm, e=3mm | Getriebe: 40:1                |");
+  Serial.println("+--------------------------------------------------------------+\n");
   motor_init();
-  Serial.println("✓ ESC PWM initialized (Pin 25)");
-  
+  Serial.println("[OK] ESC PWM initialized (Pin 25)");
   mpu_init();
-  Serial.println("✓ MPU-6050 OK");
-  
+  Serial.println("[OK] MPU-6050 OK");
   ms5837_init();
-  Serial.println("✓ MS5837 OK");
-  
-  // WiFi
+  Serial.println("[OK] MS5837 OK");
   WiFi.softAP(WIFI_SSID, WIFI_PASS);
   udp.begin(4210);
-  Serial.print("✓ WiFi AP: "); Serial.print(WIFI_SSID);
+  Serial.print("[OK] WiFi AP: "); Serial.print(WIFI_SSID);
   Serial.print(" | IP: "); Serial.println(WiFi.softAPIP());
-  
-  Serial.println("\n[Ready] Tippe '?' für Befehle.\n");
+  Serial.println("\n[Ready] Type '?' for commands.\n");
 }
 
-// ════════════════════════════════════════════════════════════
-//  HAUPTSCHLEIFE
-// ════════════════════════════════════════════════════════════
+// ============================================================
+//  MAIN LOOP
+// ============================================================
 void loop() {
   uint32_t now = millis();
-  
-  // 1. Sensor-Update @ 20 Hz
   if (now - lastSensor >= SENSOR_DT_MS) {
     lastSensor = now;
     mpu_read();
     ms5837_read();
   }
-  
-  // 2. Motor-Update (kontinuierlich, dt begrenzt)
   static uint32_t lastMotor = 0;
   if (now - lastMotor >= 10) {
     lastMotor = now;
     motor_update(0.01f);
   }
-  
-  // 3. Brustflossen-Update
   updatePectoralFins();
-  
-  // 4. PID @ 20 Hz
   if (now - lastPID >= PID_DT_MS) {
     lastPID = now;
     runDepthPID((float)PID_DT_MS / 1000.0f);
   }
-  
-  // 5. Telemetrie @ 2 Hz
   if (now - lastTelem >= TELEM_DT_MS) {
     lastTelem = now;
-    Serial.printf("[%lu] T:%.0f%% f:%.2fHz D:%.2fm P:%.1f°\n",
+    Serial.printf("[%lu] T:%.0f%% f:%.2fHz D:%.2fm P:%.1f deg\n",
                   now/1000, motor.throttle*100, motor.freq_swim, depthM, pitchDeg);
   }
-  
-  // 6. Kommunikation
   parseUDP();
   parseSerial();
-  
   delay(5);
 }

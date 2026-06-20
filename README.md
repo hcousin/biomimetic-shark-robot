@@ -222,3 +222,33 @@ MIT License — Frei nutzbar, Änderungen erlaubt, Nennung erforderlich.
 ---
 
 **Happy Shark Building! 🦈**
+
+
+---
+
+## 🔬 Acknowledgements & Related Work
+
+Dieses Projekt ist eine unabhängige Reimplementierung, inspiriert durch folgende Open-Source-Arbeiten:
+
+### OpenFish (TU Delft, 2022)
+> van den Berg, S.C., Scharff, R.B.N., Rusák, Z., Wu, J. (2022).
+> *OpenFish: Biomimetic Design of a Soft Robotic Fish for High Speed Locomotion.*
+> HardwareX. https://doi.org/10.17605/OSF.IO/FB5VH
+> **Lizenz: CC-BY-SA 4.0**
+
+Konzeptuelle Inspiration: Kombination aus aktivem und passivem Schwanzsegment
+für Thunniform-Schwimmen — in diesem Projekt neu implementiert mit
+exzentrischer Nockenwelle + TPU-Federgelenken.
+
+⚠️ **Hinweis:** Es wurden **keine Designdateien von OpenFish direkt übernommen**.
+Dieses Projekt ist eine eigenständige Neuentwicklung mit anderer Hardware
+(Brushless-Motor, exzentrische Nockenwelle, TPU-Gelenke, ESP32).
+Die MIT-Lizenz dieses Projekts gilt daher uneingeschränkt.
+
+### FISHR — Erweiterung von OpenFish (2025)
+> *Fluid interaction study: Hydrodynamic robot (FISHR) —
+> Expansion of bioinspired soft robotic fish.*
+> HardwareX. https://www.hardware-x.com/article/S2468-0672(25)00052-5
+> **Lizenz: CC BY 4.0**
+
+Referenz für Validierungsmethodik (Tail-Kinematik-Vergleich, Strouhal-Optimierung).

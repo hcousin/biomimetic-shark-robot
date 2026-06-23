@@ -12,14 +12,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Ensure repo exists on Codeberg
+        env:
+          CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://codeberg.org/api/v1/repos/hcousin/${REPO_NAME}" \
+            -H "Authorization: token ${CB_TOKEN}")
+          echo "Repo check HTTP: $HTTP"
+          if [ "$HTTP" = "404" ]; then
+            echo "Repo existiert nicht — erstelle es..."
+            curl -s -X POST "https://codeberg.org/api/v1/user/repos" \
+              -H "Authorization: token ${CB_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"name\":\"${REPO_NAME}\",\"private\":false,\"auto_init\":false}"
+            echo "Repo erstellt."
+          else
+            echo "Repo existiert bereits — kein Erstellen nötig."
+          fi
+
       - name: Mirror to Codeberg
         env:
           CB_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT:   ${{ secrets.GH_PAT }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
+
+          # Credentials sicher hinterlegen
           echo "machine codeberg.org login hcousin password ${CB_TOKEN}" > ~/.netrc
+          echo "machine github.com login hcousin password ${GH_PAT}" >> ~/.netrc
           chmod 600 ~/.netrc
-          git clone --bare "https://hcousin:${GH_PAT}@github.com/${{ github.repository }}.git" repo_bare
+
+          # Mirror-Clone von GitHub
+          git clone --bare \
+            "https://hcousin:${GH_PAT}@github.com/${{ github.repository }}.git" \
+            repo_bare
+
           cd repo_bare
-          git push --mirror "https://codeberg.org/hcousin/${REPO_NAME}.git"
+
+          # Mirror-Push zu Codeberg (--force für divergierte History)
+          git push --mirror --force \
+            "https://hcousin:${CB_TOKEN}@codeberg.org/hcousin/${REPO_NAME}.git"
+
+          echo "✅ Mirror abgeschlossen: https://codeberg.org/hcousin/${REPO_NAME}"
